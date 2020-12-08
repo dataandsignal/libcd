@@ -18,8 +18,25 @@
 
 
 enum cd_work_sync_async_type {
-	RM_WORK_SYNC,               /* destructor will be called by worker syncronously after processing callback returned */
-	RM_WORK_ASYNC               /* worker thread is not responsible for the calling of destructor of this work type - call to destructor must be configured by work's processing callback  */
+	CD_WORK_SYNC,               /* destructor will be called by worker syncronously after processing callback returned */
+	CD_WORK_ASYNC               /* worker thread is not responsible for the calling of destructor of this work type - call to destructor must be configured by work's processing callback  */
+};
+
+enum cd_error {
+	CD_ERR_OK,
+	CD_ERR_FAIL,
+	CD_ERR_BUSY,
+	CD_ERR_MEM,
+	CD_ERR_SETSID,
+	CD_ERR_WORKQUEUE_CREATE,
+	CD_ERR_BAD_CALL,
+	CD_ERR_FORK,
+	CD_ERR_CHDIR,
+	CD_ERR_IO_ERROR,
+	CD_ERR_FOPEN_STDOUT,
+	CD_ERR_FOPEN_STDERR,
+	CD_ERR_FREOPEN_STDOUT,
+	CD_ERR_FREOPEN_STDERR
 };
 
 struct cd_worker {              /* thread wrapper */
@@ -49,16 +66,19 @@ struct cd_workqueue {
 enum cd_error cd_wq_workqueue_init(struct cd_workqueue *q, uint32_t workers_n, const char *name);
 enum cd_error cd_wq_workqueue_deinit(struct cd_workqueue *wq);
 
-/* queue MUST be empty now */
 void cd_wq_workqueue_free(struct cd_workqueue *wq);
 struct cd_workqueue* cd_wq_workqueue_create(uint32_t workers_n, const char *name);
 enum cd_error cd_wq_workqueue_stop(struct cd_workqueue *wq);
 
+struct cd_msg {
+	void *signal;
+	void *data;
+};
+
 struct cd_work {
 	struct cd_list_head  link;
-	enum cd_work_type   task;
+	enum cd_work_sync_async_type   type;
 	struct cd_msg       *msg;               /* message handle */
-	int                 fd;                 /* socket */
 	uint8_t				worker_idx;			/* index of worker in the workers table of workqueue, which is processing this work */					
 	void* (*f)(void*);                      /* processing */
 	void (*f_dtor)(void*);                  /* destructor */
@@ -73,20 +93,12 @@ struct cd_work {
 #define DECLARE_WORK(n, d, f) \
 	struct work_struct n = RM_WORK_INITIALIZER(n, d, f)
 
-struct cd_work*
-cd_work_init(struct cd_work* work, enum cd_work_type task, struct cd_msg* msg, int fd, void*(*f)(void*), void(*f_dtor)(void*));
-
-struct cd_work*
-cd_work_create(enum cd_work_type task, struct cd_msg* msg, int fd, void*(*f)(void*), void(*f_dtor)(void*));
-
-void
-cd_work_free(struct cd_work* work);
-
-void
-cd_wq_queue_work(struct cd_workqueue *q, struct cd_work* work);
-
-void
-cd_wq_queue_delayed_work(struct cd_workqueue *q, struct cd_work* work, unsigned int delay);
+struct cd_work* cd_work_init(struct cd_work* work, enum cd_work_sync_async_type type, struct cd_msg* msg, void*(*f)(void*), void(*f_dtor)(void*));
+struct cd_work* cd_work_create(enum cd_work_sync_async_type type, struct cd_msg* msg, void*(*f)(void*), void(*f_dtor)(void*));
+void cd_work_free(struct cd_work* work);
+void cd_wq_queue_work(struct cd_workqueue *q, struct cd_work* work);
+void cd_wq_queue_delayed_work(struct cd_workqueue *q, struct cd_work* work, unsigned int delay);
+enum cd_error cd_launch_thread(pthread_t *t, void*(*f)(void*), void *arg, int detachstate);
 
 
 #endif  /* CD_WORKQUEUE_H */

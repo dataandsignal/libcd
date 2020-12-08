@@ -1,16 +1,16 @@
 CC			= gcc
-CFLAGS			= -c -fPIC -Wall -Wextra -Wfatal-errors # -std=gnu99
+CFLAGS			= -c -fPIC -Wall -Wextra -Wfatal-errors -Wno-unused-function
 LDFLAGS      = -shared
 SRCDIR 			= .
 DEBUGOUTPUTDIR 		= build/debug
 RELEASEOUTPUTDIR	= build/release
 SOURCES			= src/cd_wq.c
-INCLUDES		= -I. -I../include
+INCLUDES		= -I.
 _OBJECTS		= $(SOURCES:.c=.o)
 DEBUGOBJECTS 		= $(patsubst %,$(DEBUGOUTPUTDIR)/%,$(_OBJECTS))
 RELEASEOBJECTS 		= $(patsubst %,$(RELEASEOUTPUTDIR)/%,$(_OBJECTS))
-DEBUGTARGET		= build/debug/cd.so
-RELEASETARGET	= build/release/cd.so
+DEBUGTARGET		= build/debug/libcd.so
+RELEASETARGET	= build/release/libcd.so
 
 debugall:	$(SOURCES) $(DEBUGTARGET)
 releaseall:	$(SOURCES) $(RELEASETARGET)
@@ -47,10 +47,9 @@ $(RELEASEOUTPUTDIR)/%.o: $(SRCDIR)/%.c
 .c.o:
 	$(CC) $(CFLAGS) $(INCLUDES) $< -o $@
 
-all: $(RELEASETARGET)
+all: release
+
+.DEFAULT_GOAL = release
 
 clean:
 	rm -rf $(DEBUGOBJECTS) $(DEBUGTARGET) $(RELEASEOBJECTS) $(RELEASETARGET)
-
-$(TARGET) : $(OBJECTS)
-    $(CC) $(CFLAGS) $(OBJECTS) -o $@ $(LDFLAGS)

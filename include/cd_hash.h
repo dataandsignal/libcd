@@ -1,5 +1,5 @@
 /**
- * cd_hash.h - Hashtable implementation
+ * cd_hash.h - Hashtable implementation, based on Linux kernel implementation
  *
  * Part of the libcd - bringing you support for C programs with queue processors, from Data And Signal's Piotr Gregor
  * 
@@ -131,16 +131,12 @@ cd_hash_64(uint64_t val, unsigned int bits) {
 	n <<= 2;
 	hash += n;
 
-	/* High bits are more random, so use them. */
 	return hash >> (64 - bits);
 }
 
 static uint32_t
 cd_hash_32(uint32_t val, unsigned int bits) {
-	/* On some cpus multiply is faster, on others gcc will do shifts */
 	uint32_t hash = val * GOLDEN_RATIO_PRIME_32;
-
-	/* High bits are more random, so use them. */
 	return hash >> (32 - bits);
 }
 

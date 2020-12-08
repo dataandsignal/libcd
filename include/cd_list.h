@@ -1,5 +1,5 @@
 /**
- * cd_list.h - Doubly linked list implementation
+ * cd_list.h - Doubly linked list implementation, based on Linux kernel implementation
  *
  * Part of the libcd - bringing you support for C programs with queue processors, from Data And Signal's Piotr Gregor
  * 
