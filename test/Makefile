@@ -1,16 +1,15 @@
 CC			= gcc
-CFLAGS			= -c -fPIC -Wall -Wextra -Wfatal-errors -Wno-unused-function
-LDFLAGS      = -shared
+CFLAGS			= -c -Wall -Wextra -Wfatal-errors -Wno-unused-function
 SRCDIR 			= .
 DEBUGOUTPUTDIR 		= build/debug
 RELEASEOUTPUTDIR	= build/release
-SOURCES			= src/cd_wq.c
-INCLUDES		= -I.
+SOURCES			= cd_test_list.c
+INCLUDES		= -I. -I../include
 _OBJECTS		= $(SOURCES:.c=.o)
 DEBUGOBJECTS 		= $(patsubst %,$(DEBUGOUTPUTDIR)/%,$(_OBJECTS))
 RELEASEOBJECTS 		= $(patsubst %,$(RELEASEOUTPUTDIR)/%,$(_OBJECTS))
-DEBUGTARGET		= build/debug/libcd.so
-RELEASETARGET	= build/release/libcd.so
+DEBUGTARGET		= build/debug/cdtestlist
+RELEASETARGET		= build/release/cdtestlist
 
 debugall:	$(SOURCES) $(DEBUGTARGET)
 releaseall:	$(SOURCES) $(RELEASETARGET)
@@ -18,28 +17,20 @@ releaseall:	$(SOURCES) $(RELEASETARGET)
 # additional flags
 # CONFIG_DEBUG_LIST	- extensive debugging of list with external debugging
 # 			functions
-debug:		CFLAGS += -DDEBUG -g -ggdb3 -O0
-debug:		debugall
-
-release:	CFLAGS += -DNDEBUG
-release: 	releaseall
-
+test-debug:		CFLAGS += -DDEBUG -g -ggdb3 -O0
 test-debug:		debugall
-		cd test && make test-debug
 
-test-release:		releaseall
-		cd test && make test-release
+test-release:	CFLAGS += -DNDEBUG
+test-release: 	releaseall
 
-test:		test-debug
-
-test-clean:
-		cd test && make clean
+test:		test-release
+		./$(RELEASETARGET)
 
 $(DEBUGTARGET): $(DEBUGOBJECTS) 
-	$(CC) $(DEBUGOBJECTS) -o $@ $(LDFLAGS)
+	$(CC) $(LDFLAGS) $(DEBUGOBJECTS) -o $@
 
 $(RELEASETARGET): $(RELEASEOBJECTS) 
-	$(CC) $(RELEASEOBJECTS) -o $@ $(LDFLAGS)
+	$(CC) $(LDFLAGS) $(RELEASEOBJECTS) -o $@
 
 $(DEBUGOUTPUTDIR)/%.o: $(SRCDIR)/%.c
 	$(CC) $(CFLAGS) $(INCLUDES) $< -o $@
@@ -49,10 +40,6 @@ $(RELEASEOUTPUTDIR)/%.o: $(SRCDIR)/%.c
 
 .c.o:
 	$(CC) $(CFLAGS) $(INCLUDES) $< -o $@
-
-all: release
-
-.DEFAULT_GOAL = release
 
 clean:
 	rm -rf $(DEBUGOBJECTS) $(DEBUGTARGET) $(RELEASEOBJECTS) $(RELEASETARGET)
