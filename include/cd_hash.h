@@ -20,7 +20,6 @@
 #include <stdint.h>
 
 
-/* TODO handle n < 0 case */
 #define cd_ilog2(n)	            \
 (			                    \
 	(                           \
@@ -114,8 +113,7 @@
 	#endif
 #endif
 
-static uint64_t
-cd_hash_64(uint64_t val, unsigned int bits) {
+static uint64_t cd_hash_64(uint64_t val, unsigned int bits) {
 	uint64_t hash = val;
 	uint64_t n = hash;
 	n <<= 18;
@@ -134,19 +132,19 @@ cd_hash_64(uint64_t val, unsigned int bits) {
 	return hash >> (64 - bits);
 }
 
-static uint32_t
-cd_hash_32(uint32_t val, unsigned int bits) {
+static uint32_t cd_hash_32(uint32_t val, unsigned int bits)
+{
 	uint32_t hash = val * GOLDEN_RATIO_PRIME_32;
 	return hash >> (32 - bits);
 }
 
-static unsigned long
-cd_hash_ptr(const void *ptr, unsigned int bits) {
+static unsigned long cd_hash_ptr(const void *ptr, unsigned int bits)
+{
 	return cd_hash_long((unsigned long)ptr, bits);
 }
 
-static uint32_t
-cd_hash32_ptr(const void *ptr) {
+static uint32_t cd_hash32_ptr(const void *ptr)
+{
 	unsigned long val = (unsigned long) ptr;
 
 #if CD_BITS_PER_LONG == 64
@@ -162,10 +160,10 @@ cd_hash32_ptr(const void *ptr) {
 	struct cd_hlist_head name[1 << (bits)] =			\
 		{ [0 ... ((1 << (bits)) - 1)] = CD_HLIST_HEAD_INIT }
 */
-#define CD_DEFINE_HASHTABLE(name, bits) struct cd_hlist_head name[1 << (bits)]
+#define CD_DEFINE_HASHTABLE(name, bits) struct cd_hlist_head name[1 << (bits)] = { 0 }
 
 #define CD_DECLARE_HASHTABLE(name, bits)	\
-	struct cd_hlist_head name[1 << (bits)]
+	struct cd_hlist_head name[1 << (bits)] = { 0 }
 
 #define CD_HASH_SIZE(name) (CD_ARRAY_SIZE(name))
 #define CD_HASH_BITS(name) cd_ilog2(CD_HASH_SIZE(name))
@@ -176,8 +174,8 @@ cd_hash32_ptr(const void *ptr) {
 	(sizeof(val) <= 4 ? cd_hash_32(val, bits) \
 	 	: cd_hash_long(val, bits))
 
-static void
-__cd_hash_init(struct cd_hlist_head *ht, size_t sz) {
+static void __cd_hash_init(struct cd_hlist_head *ht, size_t sz)
+{
 	size_t i;
 	for (i = 0; i < sz; i++)
 		CD_INIT_HLIST_HEAD(&ht[i]);
@@ -206,13 +204,11 @@ __cd_hash_init(struct cd_hlist_head *ht, size_t sz) {
 
 /* @brief	Check whether an object is in any hashtable.
  * @node: the &struct cd_hlist_node of the object to be checked */
-static int
-cd_hash_hashed(struct cd_hlist_node *node) {
+static int cd_hash_hashed(struct cd_hlist_node *node) {
 	return !cd_hlist_unhashed(node);
 }
 
-static int
-__cd_hash_empty(struct cd_hlist_head *ht, unsigned int sz) {
+static int __cd_hash_empty(struct cd_hlist_head *ht, unsigned int sz) {
 	unsigned int i;
 
 	for (i = 0; i < sz; i++)
@@ -231,8 +227,7 @@ __cd_hash_empty(struct cd_hlist_head *ht, unsigned int sz) {
 
 /* @brief	Remove an object from a hashtable.
  * @node: &struct cd_hlist_node of the object to remove */
-static void
-cd_hash_del(struct cd_hlist_node *node) {
+static void cd_hash_del(struct cd_hlist_node *node) {
 		cd_hlist_del_init(node);
 }
 

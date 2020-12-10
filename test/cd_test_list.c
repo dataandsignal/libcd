@@ -1,5 +1,5 @@
 /**
- * cd_list_test.c - Unit tests for cd_list
+ * cd_test_list.c - Unit tests for cd_list
  *
  * Part of the libcd - bringing you support for C programs with queue processors, from Data And Signal's Piotr Gregor
  * 
@@ -188,8 +188,7 @@ static void test_list(void)
 	test_list_del_init();
 }
 
-int
-main(void)
+int main(void)
 {
 	test_list();
 	return 0;

@@ -30,7 +30,7 @@ test-debug:		debugall
 test-release:		releaseall
 		cd test && make test-release
 
-test:		test-debug
+test:		test-release
 
 test-clean:
 		cd test && make clean
