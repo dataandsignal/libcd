@@ -51,10 +51,7 @@ typedef cd_hlist_head_dbg cd_hlist_head;
 typedef cd_hlist_node_dbg cd_hlist_node;
 #endif
 
-/* Simple doubly linked list implementation. */
-
 #define CD_LIST_HEAD_INIT(name) { &(name), &(name) }
-
 #define CD_LIST_HEAD(name) struct cd_list_head name = CD_LIST_HEAD_INIT(name)
 
 static void CD_INIT_LIST_HEAD(struct cd_list_head *list)
@@ -67,10 +64,9 @@ static void CD_INIT_LIST_HEAD(struct cd_list_head *list)
  * This is only for internal list manipulation where we know
  * the prev/next entries already! */
 #ifndef CONFIG_DEBUG_LIST
-static void
-__cd_list_add(struct cd_list_head *new,
-				struct cd_list_head *prev,
-				struct cd_list_head *next)
+static void __cd_list_add(struct cd_list_head *new,
+		struct cd_list_head *prev,
+		struct cd_list_head *next)
 {
 	next->prev = new;
 	new->next = next;
@@ -78,10 +74,9 @@ __cd_list_add(struct cd_list_head *new,
 	prev->next = new;
 }
 #else
-extern void
-__cd_list_add(struct cd_list_head *new,
-			struct cd_list_head *prev,
-			struct cd_list_head *next);
+extern void __cd_list_add(struct cd_list_head *new,
+		struct cd_list_head *prev,
+		struct cd_list_head *next);
 #endif
 
 
@@ -89,8 +84,7 @@ __cd_list_add(struct cd_list_head *new,
  * @param   new:	new entry to be added
  * @param   head:	list head to add it after
  * @details	This is good for implementing stacks. */
-static void
-cd_list_add(struct cd_list_head *new,
+static void cd_list_add(struct cd_list_head *new,
 				struct cd_list_head *head)
 {
 		__cd_list_add(new, head, head->next);
@@ -101,8 +95,7 @@ cd_list_add(struct cd_list_head *new,
  * @param       new:	new entry to be added
  * @param       head:	list head to add it before
  * @details     This is useful for implementing queues. */
-static void
-cd_list_add_tail(struct cd_list_head *new,
+static void cd_list_add_tail(struct cd_list_head *new,
 				struct cd_list_head *head)
 {
 		__cd_list_add(new, head->prev, head);
@@ -112,8 +105,7 @@ cd_list_add_tail(struct cd_list_head *new,
  *          point to each other.
  * @details This is only for internal list manipulation where we know
  *          the prev/next entries already! */
-static void
-__cd_list_del(struct cd_list_head * prev,
+static void __cd_list_del(struct cd_list_head * prev,
 				struct cd_list_head * next)
 {
 	next->prev = prev;
@@ -125,30 +117,25 @@ __cd_list_del(struct cd_list_head * prev,
  * @details list_empty() on entry does not return
  *          true after this, the entry is in an undefined state. */
 #ifndef CONFIG_DEBUG_LIST
-static void
-__cd_list_del_entry(struct cd_list_head *entry)
+static void __cd_list_del_entry(struct cd_list_head *entry)
 {
 	__cd_list_del(entry->prev, entry->next);
 }
 
-static void
-cd_list_del(struct cd_list_head *entry)
+static void cd_list_del(struct cd_list_head *entry)
 {
 	__cd_list_del(entry->prev, entry->next);
 	entry->next = CD_LIST_POISON1;
 	entry->prev = CD_LIST_POISON2;
 }
 #else
-extern void
-__cd_list_del_entry(struct cd_list_head *entry);
-extern void
-cd_list_del(struct cd_list_head *entry);
+extern void __cd_list_del_entry(struct cd_list_head *entry);
+extern void cd_list_del(struct cd_list_head *entry);
 #endif
 
-/* @brief   Deletes entry from cd_list and reinitialize it.
+/* @brief   Deletes entry from cd_list and reinitializes it.
  * @param   entry: the element to delete from the cd_list. */
-static void
-cd_list_del_init(struct cd_list_head *entry)
+static void cd_list_del_init(struct cd_list_head *entry)
 {
 	__cd_list_del_entry(entry);
 	CD_INIT_LIST_HEAD(entry);
@@ -157,8 +144,7 @@ cd_list_del_init(struct cd_list_head *entry)
 /* @brief   Delete from one cd_list and add as another's head
  * @param   cd_list: the entry to move
  * @param   head: the head that will precede our entry */
-static void
-cd_list_move(struct cd_list_head *cd_list, struct cd_list_head *head)
+static void cd_list_move(struct cd_list_head *cd_list, struct cd_list_head *head)
 {
 	__cd_list_del_entry(cd_list);
 	cd_list_add(cd_list, head);
@@ -167,8 +153,7 @@ cd_list_move(struct cd_list_head *cd_list, struct cd_list_head *head)
 /* @brief	Delete from one cd_list and add as another's tail
  * @cd_list: the entry to move
  * @head: the head that will follow our entry */
-static void
-cd_list_move_tail(struct cd_list_head *cd_list,
+static void cd_list_move_tail(struct cd_list_head *cd_list,
 						  struct cd_list_head *head)
 {
 	__cd_list_del_entry(cd_list);
@@ -178,8 +163,7 @@ cd_list_move_tail(struct cd_list_head *cd_list,
 /* @brief	Tests whether @list is the last entry in cd_list @head
  * @list: the entry to test
  * @head: the head of the cd_list which @list is member of */
-static int
-cd_list_is_last(const struct cd_list_head *list,
+static int cd_list_is_last(const struct cd_list_head *list,
 					const struct cd_list_head *head)
 {
 	return list->next == head;
@@ -187,8 +171,7 @@ cd_list_is_last(const struct cd_list_head *list,
 
 /* @brief	Tests whether a cd_list is empty.
  * @head: the cd_list to test. */
-static int
-cd_list_empty(const struct cd_list_head *head)
+static int cd_list_empty(const struct cd_list_head *head)
 {
 	return head->next == head;
 }
@@ -202,8 +185,7 @@ cd_list_empty(const struct cd_list_head *head)
  * can only be safe if the only activity that can happen
  * to the cd_list entry is cd_list_del_init(). Eg. it
  * cannot be used if another CPU could re-cd_list_add() it. */
-static int
-cd_list_empty_careful(const struct cd_list_head *head)
+static int cd_list_empty_careful(const struct cd_list_head *head)
 {
 		struct cd_list_head *next = head->next;
 			return (next == head) && (next == head->prev);
@@ -211,8 +193,7 @@ cd_list_empty_careful(const struct cd_list_head *head)
 
 /* @brief	Rotate the cd_list to the left
  * @head: the head of the cd_list */
-static void
-cd_list_rotate_left(struct cd_list_head *head)
+static void cd_list_rotate_left(struct cd_list_head *head)
 {
 	struct cd_list_head *first;
 	if (!cd_list_empty(head))
@@ -224,14 +205,12 @@ cd_list_rotate_left(struct cd_list_head *head)
 
 /* @brief	Tests whether a cd_list has just one entry.
  * @head: the cd_list to test. */
-static int
-cd_list_is_singular(const struct cd_list_head *head)
+static int cd_list_is_singular(const struct cd_list_head *head)
 {
 	return !cd_list_empty(head) && (head->next == head->prev);
 }
 
-static void
-__cd_list_cut_position(struct cd_list_head *cd_list,
+static void __cd_list_cut_position(struct cd_list_head *cd_list,
 						struct cd_list_head *head,
 						struct cd_list_head *entry)
 {
@@ -522,27 +501,23 @@ static void cd_list_splice_tail_init(struct cd_list_head *cd_list,
 #define CD_HLIST_HEAD_INIT { .first = NULL }
 #define CD_HLIST_HEAD(name) struct cd_hlist_head name = {  .first = NULL }
 #define CD_INIT_HLIST_HEAD(ptr) ((ptr)->first = NULL)
-static void
-CD_INIT_HLIST_NODE(struct cd_hlist_node *h)
+static void CD_INIT_HLIST_NODE(struct cd_hlist_node *h)
 {
 	h->next = NULL;
 	h->pprev = NULL;
 }
 
-static int
-cd_hlist_unhashed(const struct cd_hlist_node *h)
+static int cd_hlist_unhashed(const struct cd_hlist_node *h)
 {
 	return !h->pprev;
 }
 
-static int
-cd_hlist_empty(const struct cd_hlist_head *h)
+static int cd_hlist_empty(const struct cd_hlist_head *h)
 {
 	return !h->first;
 }
 
-static void
-__cd_hlist_del(struct cd_hlist_node *n)
+static void __cd_hlist_del(struct cd_hlist_node *n)
 {
 	struct cd_hlist_node *next = n->next;
 	struct cd_hlist_node **pprev = n->pprev;
@@ -551,16 +526,14 @@ __cd_hlist_del(struct cd_hlist_node *n)
 		next->pprev = pprev;
 }
 
-static void
-cd_hlist_del(struct cd_hlist_node *n)
+static void cd_hlist_del(struct cd_hlist_node *n)
 {
 	__cd_hlist_del(n);
 	n->next = CD_LIST_POISON1;
 	n->pprev = CD_LIST_POISON2;
 }
 
-static void
-cd_hlist_del_init(struct cd_hlist_node *n)
+static void cd_hlist_del_init(struct cd_hlist_node *n)
 {
 	if (!cd_hlist_unhashed(n))
 	{
@@ -569,8 +542,7 @@ cd_hlist_del_init(struct cd_hlist_node *n)
 	}
 }
 
-static void
-cd_hlist_add_head(struct cd_hlist_node *n,
+static void cd_hlist_add_head(struct cd_hlist_node *n,
 			struct cd_hlist_head *h)
 {
 	struct cd_hlist_node *first = h->first;
@@ -582,8 +554,7 @@ cd_hlist_add_head(struct cd_hlist_node *n,
 }
 
 /* next must be != NULL */
-static void
-cd_hlist_add_before(struct cd_hlist_node *n,
+static void cd_hlist_add_before(struct cd_hlist_node *n,
 				struct cd_hlist_node *next)
 {
 	n->pprev = next->pprev;
@@ -592,8 +563,7 @@ cd_hlist_add_before(struct cd_hlist_node *n,
 	*(n->pprev) = n;
 }
 
-static void
-cd_hlist_add_after(struct cd_hlist_node *n,
+static void cd_hlist_add_after(struct cd_hlist_node *n,
 			struct cd_hlist_node *next)
 {
 	next->next = n->next;
@@ -605,16 +575,14 @@ cd_hlist_add_after(struct cd_hlist_node *n,
 }
 
 /* after that we'll appear to be on some hlist and hlist_del will work */
-static void
-cd_hlist_add_fake(struct cd_hlist_node *n)
+static void cd_hlist_add_fake(struct cd_hlist_node *n)
 {
 	n->pprev = &n->next;
 }
 
 /* Move a list from one list head to another. Fixup the pprev
  * reference of the first entry if it exists. */
-static void
-cd_hlist_move_list(struct cd_hlist_head *old,
+static void cd_hlist_move_list(struct cd_hlist_head *old,
 			struct cd_hlist_head *new)
 {
 	new->first = old->first;
@@ -677,13 +645,11 @@ cd_hlist_move_list(struct cd_hlist_head *old,
 /* @brief	First-in, first-out queue. */
 typedef struct cd_list_head cd_fifo_queue;
 
-static void
-cd_fifo_enqueue(struct cd_list_head *new, cd_fifo_queue *q) {
+static void cd_fifo_enqueue(struct cd_list_head *new, cd_fifo_queue *q) {
 	cd_list_add_tail(new, (struct cd_list_head *)q);
 }
 
-static struct cd_list_head*
-cd_fifo_dequeue_f(cd_fifo_queue *q)
+static struct cd_list_head* cd_fifo_dequeue_f(cd_fifo_queue *q)
 {
 	struct cd_list_head *l; 
 	if (cd_list_empty((struct cd_list_head*)q))
@@ -696,8 +662,6 @@ cd_fifo_dequeue_f(cd_fifo_queue *q)
 	({ cd_list_empty((struct cd_list_head*)q) ? \
      l = NULL : (l = ((struct cd_list_head*)q)->next, cd_list_del(l), l); \
 	})
-/*#define cd_fifo_dequeue(q,l) cd_list_empty(struct cd_list_head*)q ? NULL : l = q->next, cd_list_del(l), l*/
-
 
 /* @brief   Get pointer to an entry BUT not dequeue it. */
 #define cd_fifo_get_entry(q, type, member) __extension__ {(		\
