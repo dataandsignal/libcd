@@ -16,6 +16,7 @@
 
 #include <stdlib.h>
 #include <limits.h>
+#include <stddef.h>
 
 
 #define cd_container_of(ptr, type, member) __extension__ ({         \

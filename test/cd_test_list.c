@@ -12,6 +12,7 @@
 #include "../include/cd_list.h"
 #include <assert.h>
 #include <stdint.h>
+#include <stdio.h>
 
 
 struct test {
@@ -179,6 +180,23 @@ static void test_list_del_init(void)
 	assert(g.link.prev == &g.link);
 }
 
+static void test_fifo_enqueue(void)
+{
+	cd_fifo_queue queue = { 0 };
+	struct test work = { 0 };
+	struct cd_list_head *it = NULL, *n = NULL;
+
+	CD_INIT_LIST_HEAD(&queue);
+	cd_fifo_enqueue(&work.link, &queue);
+	cd_list_for_each_safe(it, n, &queue)
+	{
+		struct test *e = cd_container_of(it, struct test, link);
+		printf("-> queue entry %p: key=%u val=%d\n", it, e->key, e->val);
+		cd_list_del_init(it);
+	}
+	assert(cd_list_empty(&queue));
+}
+
 static void test_list(void)
 {
 	test_list_head_init();
@@ -186,6 +204,7 @@ static void test_list(void)
 	test_list_add_tail();
 	test_list_del();
 	test_list_del_init();
+	test_fifo_enqueue();
 }
 
 int main(void)

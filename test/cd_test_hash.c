@@ -28,7 +28,7 @@ static void test_hash_init(void)
 	CD_DEFINE_HASHTABLE(h, 8);
 	cd_hash_init(h);
 
-	assert(h[0].next == h[0].prev == h[0]);
+	assert(h[0].first == NULL);
 }
 
 static void cd_test_hash(void)
