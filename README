@@ -1,3 +1,19 @@
 libcd
 
 Support for C programs with queue processors, from Data And Signal's Piotr Gregor.
+
+
+BUILD
+
+This builds on Linux Debian. make, make debug and make release produce shared library in build/debug or build/release folders.
+
+make debug			-> for debug build
+make release		-> for release build
+make test-debug		-> for build and run of debug version of tests 
+make test-release	-> for build and run of release version of tests
+
+make				-> same as make release
+make test			-> same as make test-release
+
+make clean			-> remove library binaries
+make test-clean		-> remove test binaries
