@@ -208,29 +208,32 @@ enum cd_error cd_wq_workqueue_stop(struct cd_workqueue *wq)
 	return err;
 }
 
-struct cd_work* cd_work_init(struct cd_work* work, enum cd_work_sync_async_type type, struct cd_msg* msg, void*(*f)(void*), void(*f_dtor)(void*))
+struct cd_work* cd_work_init(struct cd_work* work, enum cd_work_sync_async_type type, void *user_data, int user_data_type, void*(*f)(void*), void(*f_dtor)(void*))
 {
 	CD_INIT_LIST_HEAD(&work->link);
 	work->type = type;
-	work->msg = msg;
+	work->user_data = user_data;
+	work->user_data_type = user_data_type;
 	work->f = f;
 	work->f_dtor = f_dtor;
 	return work;
 }
 
-struct cd_work* cd_work_create(enum cd_work_sync_async_type type, struct cd_msg* msg, void*(*f)(void*), void(*f_dtor)(void*))
+struct cd_work* cd_work_create(enum cd_work_sync_async_type type, void *user_data, int user_data_type, void*(*f)(void*), void(*f_dtor)(void*))
 {
 	struct cd_work* work = malloc(sizeof(struct cd_work));
 	if (work == NULL)
 		return NULL;
 
-	return cd_work_init(work, type, msg, f, f_dtor);
+	return cd_work_init(work, type, user_data, user_data_type, f, f_dtor);
 }
 
 void cd_work_free(struct cd_work* work)
 {
-	if (work->msg != NULL)
-		free(work->msg);
+	if (work->user_data != NULL) {
+		free(work->user_data);
+		work->user_data = NULL;
+	}
 
 	free(work);
 }
