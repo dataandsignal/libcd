@@ -18,13 +18,14 @@ static void cd_wq_call_sync_dtor(struct cd_work *work)
 	switch (work->type)
 	{
 		case CD_WORK_SYNC:
-			work->f_dtor(work);                 /* must at least free the memory allocated for the message and work struct itself, may close the TCP socket, etc... */
+			if (work->f_dtor)
+				work->f_dtor(work);             /* call destructor in sync with job processing, must at least free the memory allocated for work struct */
 			work = NULL;
 			break;
 
 		case CD_WORK_ASYNC:
 		default:
-			break;                              /* do not call destructor for these types synchronously */
+			break;                              /* do not call destructor in sync, user will handle this later */
 	}
 }
 
@@ -89,7 +90,6 @@ static enum cd_error cd_wq_worker_deinit(struct cd_worker *w)
 enum cd_error cd_wq_workqueue_init(struct cd_workqueue *wq, uint32_t workers_n, const char *name)
 {
 	struct cd_worker    *w = NULL;
-	uint8_t             first_active_set = 0;
 
 	memset(wq, 0, sizeof(struct cd_workqueue));
 	wq->workers = malloc(workers_n * sizeof(struct cd_worker));
@@ -108,10 +108,8 @@ enum cd_error cd_wq_workqueue_init(struct cd_workqueue *wq, uint32_t workers_n, 
 			w->active = 1;
 			if (cd_launch_thread(&w->tid, cd_wq_worker_f, w, PTHREAD_CREATE_JOINABLE) == CD_ERR_OK) {
 				wq->workers_active_n++;																	/* increase the number of running workers */
-				if (first_active_set == 0) {
+				if (wq->first_active_worker_idx == 0)
 					wq->first_active_worker_idx = w->idx;
-					first_active_set = 1;
-				}
 			} else {
 				w->active = 0;
 			}
@@ -121,7 +119,7 @@ enum cd_error cd_wq_workqueue_init(struct cd_workqueue *wq, uint32_t workers_n, 
 	wq->name = strdup(name);
 	wq->running = 1;
 
-	wq->next_worker_idx_to_use = (first_active_set == 1 ? wq->first_active_worker_idx : 0);
+	wq->next_worker_idx_to_use = wq->first_active_worker_idx;
 	if (wq->workers_active_n > 0) {																		/* if we have at least one worker thread then queue creation was successful */
 		return CD_ERR_OK;
 	} else {
@@ -260,7 +258,7 @@ void cd_wq_queue_work(struct cd_workqueue *wq, struct cd_work* work)
 	}
 
 	work->worker_idx = w->idx;														/* save the worker's index into work */
-	wq->next_worker_idx_to_use = idx;
+	wq->next_worker_idx_to_use = idx;												/* save next worker's index into workqueue */
 
 	pthread_mutex_lock(&w->mutex);													/* enqueue work (and move ownership to worker!) */
 	cd_fifo_enqueue(&work->link, &w->queue);
