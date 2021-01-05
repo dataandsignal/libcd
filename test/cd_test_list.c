@@ -202,7 +202,7 @@ static void test_fifo_order(void)
 	cd_fifo_queue queue = { 0 };
 	struct test work1 = { .key = 1 }, work2 = { .key = 2 }, work3 = { .key = 3 };
 	struct cd_list_head *it = NULL, *n = NULL;
-	int required_key = 1;
+	uint32_t required_key = 1;
 
 	CD_INIT_LIST_HEAD(&queue);
 	cd_fifo_enqueue(&work1.link, &queue);
@@ -243,5 +243,6 @@ static void test_list(void)
 int main(void)
 {
 	test_list();
+	printf("Done!\n");
 	return 0;
 }

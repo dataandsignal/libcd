@@ -4,7 +4,7 @@ LDFLAGS      = -shared
 SRCDIR 			= .
 DEBUGOUTPUTDIR 		= build/debug
 RELEASEOUTPUTDIR	= build/release
-SOURCES			= src/cd_wq.c
+SOURCES			= src/cd_wq.c src/cd_log.c
 INCLUDES		= -I.
 _OBJECTS		= $(SOURCES:.c=.o)
 DEBUGOBJECTS 		= $(patsubst %,$(DEBUGOUTPUTDIR)/%,$(_OBJECTS))
@@ -53,6 +53,9 @@ $(RELEASEOUTPUTDIR)/%.o: $(SRCDIR)/%.c
 all: release
 
 .DEFAULT_GOAL = release
+
+install: $(RELEASETARGET)
+	cp $(RELEASETARGET) /usr/local/lib/
 
 clean:
 	rm -rf $(DEBUGOBJECTS) $(DEBUGTARGET) $(RELEASEOBJECTS) $(RELEASETARGET)

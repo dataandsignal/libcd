@@ -22,23 +22,6 @@ enum cd_work_sync_async_type {
 	CD_WORK_ASYNC               /* worker thread is not responsible for the calling of destructor of this work type - call to destructor must be configured by work's processing callback  */
 };
 
-enum cd_error {
-	CD_ERR_OK,
-	CD_ERR_FAIL,
-	CD_ERR_BUSY,
-	CD_ERR_MEM,
-	CD_ERR_SETSID,
-	CD_ERR_WORKQUEUE_CREATE,
-	CD_ERR_BAD_CALL,
-	CD_ERR_FORK,
-	CD_ERR_CHDIR,
-	CD_ERR_IO_ERROR,
-	CD_ERR_FOPEN_STDOUT,
-	CD_ERR_FOPEN_STDERR,
-	CD_ERR_FREOPEN_STDOUT,
-	CD_ERR_FREOPEN_STDERR
-};
-
 struct cd_worker {              /* thread wrapper */
 	uint8_t         idx;        /* index in workqueue table */
 	pthread_t       tid;
@@ -51,11 +34,11 @@ struct cd_worker {              /* thread wrapper */
 };
 
 struct cd_workqueue {
+	uint8_t             running;            /* 0 - no, 1 - yes */
 	struct cd_worker    *workers;
 	uint8_t             workers_n;          /* number of worker threads */
-	uint32_t            workers_active_n;   /* number of active worker threads: successfuly created and accepting work */
+	uint32_t            workers_active_n;   /* number of active worker threads: successfully created and accepting work */
 	const char          *name;
-	uint8_t             running;            /* 0 - no, 1 - yes */
 	uint8_t             first_active_worker_idx;
 	uint8_t             next_worker_idx_to_use; /* index of next worker to use for enquing the work in round-robin fashion */
 };
@@ -93,9 +76,9 @@ struct cd_work {
 #define DECLARE_WORK(n, t, ud, udt, f, f_dtor) \
 	struct work_struct n = CD_WORK_INITIALIZER(n, t, ud, udt, f, f_dtor)
 
-struct cd_work* cd_work_init(struct cd_work* work, enum cd_work_sync_async_type type, void *user_data, int user_data_type, void*(*f)(void*), void(*f_dtor)(void*));
-struct cd_work* cd_work_create(enum cd_work_sync_async_type type, void *user_data, int user_data_type, void*(*f)(void*), void(*f_dtor)(void*));
-void cd_work_free(struct cd_work* work);
+struct cd_work* cd_wq_work_init(struct cd_work* work, enum cd_work_sync_async_type type, void *user_data, int user_data_type, void*(*f)(void*), void(*f_dtor)(void*));
+struct cd_work* cd_wq_work_create(enum cd_work_sync_async_type type, void *user_data, int user_data_type, void*(*f)(void*), void(*f_dtor)(void*));
+void cd_wq_work_free(struct cd_work* work);
 void cd_wq_queue_work(struct cd_workqueue *q, struct cd_work* work);
 void cd_wq_queue_delayed_work(struct cd_workqueue *q, struct cd_work* work, unsigned int delay);
 enum cd_error cd_launch_thread(pthread_t *t, void*(*f)(void*), void *arg, int detachstate);
