@@ -212,7 +212,7 @@ static void test_fifo_order(void)
 	cd_list_for_each(it, &queue)
 	{
 		struct test *e = cd_container_of(it, struct test, link);
-		printf("-> queue entry %p: key=%u\n", it, e->key);
+		printf("-> queue entry %p: key=%u val=%d\n", it, e->key, e->val);
 		assert(e->key == required_key);
 		required_key++;
 	}
@@ -221,7 +221,7 @@ static void test_fifo_order(void)
 	cd_list_for_each_safe(it, n, &queue)
 	{
 		struct test *e = cd_container_of(it, struct test, link);
-		printf("-> queue entry %p: key=%u\n", it, e->key);
+		printf("-> queue entry %p: key=%u val=%d\n", it, e->key, e->val);
 		assert(e->key == required_key);
 		cd_list_del_init(it);
 		required_key++;

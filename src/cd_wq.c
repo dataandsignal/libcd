@@ -13,19 +13,20 @@
 #include "../include/cd_log.h"
 
 
-static void cd_wq_call_sync_dtor(struct cd_work *work)
+static void cd_wq_free_if_sync(struct cd_work *work)
 {
 	switch (work->type)
 	{
 		case CD_WORK_SYNC:
 			if (work->f_dtor)
-				work->f_dtor(work);             /* call destructor in sync with job processing, must at least free the memory allocated for work struct */
+				work->f_dtor(work);             /* call destructor in sync with job processing */
+			free(work);
 			work = NULL;
 			break;
 
 		case CD_WORK_ASYNC:
 		default:
-			break;                              /* do not call destructor in sync, user will handle this later */
+			break;                              /* do not call destructor, do not free, user will handle this later */
 	}
 }
 
@@ -44,8 +45,8 @@ static void* cd_wq_worker_f(void *arg)
 		for (cd_fifo_dequeue(q, lh); lh != NULL; cd_fifo_dequeue(q, lh)) {
 			work = cd_container_of(lh, struct cd_work, link);
 			pthread_mutex_unlock(&w->mutex);    /* allow for further enquing while work is being processed */
-			work->f(work);
-			cd_wq_call_sync_dtor(work);         /* process destructors for synchronous jobs */
+			work->f(work->user_data);
+			cd_wq_free_if_sync(work);
 			pthread_mutex_lock(&w->mutex);
 		}
 
@@ -236,7 +237,7 @@ void cd_wq_work_free(struct cd_work* work)
 	free(work);
 }
 
-void cd_wq_queue_work(struct cd_workqueue *wq, struct cd_work* work)
+enum cd_error cd_wq_queue_work(struct cd_workqueue *wq, struct cd_work* work)
 {
 	struct cd_worker    *w = NULL;
 	uint8_t             idx = wq->next_worker_idx_to_use, sanity = 0xFF;
@@ -245,7 +246,7 @@ void cd_wq_queue_work(struct cd_workqueue *wq, struct cd_work* work)
 
 	if (wq->workers_active_n == 0) {
 		CD_LOG_CRIT("NO ACTIVE WORKER THREAD in the workqueue [%s]", wq->name);
-		return;
+		return CD_ERR_WORKQUEUE_ACTIVE;
 	}
 
 	if (wq->workers_active_n > 1) {													/* get next worker */
@@ -260,13 +261,13 @@ void cd_wq_queue_work(struct cd_workqueue *wq, struct cd_work* work)
 	work->worker_idx = w->idx;														/* save the worker's index into work */
 	wq->next_worker_idx_to_use = idx;												/* save next worker's index into workqueue */
 
-	pthread_mutex_lock(&w->mutex);													/* enqueue work (and move ownership to worker!) */
+	pthread_mutex_lock(&w->mutex);													/* enqueue work (and move ownership to worker) */
 	cd_fifo_enqueue(&work->link, &w->queue);
 	w->busy = 1;
 	pthread_cond_signal(&w->signal);
 	pthread_mutex_unlock(&w->mutex);
 
-	return;
+	return CD_ERR_OK;
 }
 
 void cd_wq_queue_delayed_work(struct cd_workqueue *q, struct cd_work* work, unsigned int delay)
@@ -275,6 +276,16 @@ void cd_wq_queue_delayed_work(struct cd_workqueue *q, struct cd_work* work, unsi
 	(void)work;
 	(void)delay;
 	return;
+}
+
+enum cd_error cd_wq_queue_user(struct cd_workqueue *wq, enum cd_work_sync_async_type type, void *user_data, int user_data_type, void*(*f)(void*), void(*f_dtor)(void*))
+{
+	struct cd_work *work = cd_wq_work_create(type, user_data, user_data_type, f, f_dtor);
+	if (!work) {
+		return CD_ERR_WORK_CREATE;
+	}
+
+	return cd_wq_queue_work(wq, work);
 }
 
 enum cd_error cd_launch_thread(pthread_t *t, void*(*f)(void*), void *arg, int detachstate)

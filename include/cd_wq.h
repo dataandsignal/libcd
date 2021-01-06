@@ -79,8 +79,9 @@ struct cd_work {
 struct cd_work* cd_wq_work_init(struct cd_work* work, enum cd_work_sync_async_type type, void *user_data, int user_data_type, void*(*f)(void*), void(*f_dtor)(void*));
 struct cd_work* cd_wq_work_create(enum cd_work_sync_async_type type, void *user_data, int user_data_type, void*(*f)(void*), void(*f_dtor)(void*));
 void cd_wq_work_free(struct cd_work* work);
-void cd_wq_queue_work(struct cd_workqueue *q, struct cd_work* work);
-void cd_wq_queue_delayed_work(struct cd_workqueue *q, struct cd_work* work, unsigned int delay);
+enum cd_error cd_wq_queue_work(struct cd_workqueue *wq, struct cd_work* work);
+void cd_wq_queue_delayed_work(struct cd_workqueue *wq, struct cd_work* work, unsigned int delay);
+enum cd_error cd_wq_queue_user(struct cd_workqueue *wq, enum cd_work_sync_async_type type, void *user_data, int user_data_type, void*(*f)(void*), void(*f_dtor)(void*));
 enum cd_error cd_launch_thread(pthread_t *t, void*(*f)(void*), void *arg, int detachstate);
 
 
