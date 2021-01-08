@@ -43,7 +43,6 @@ static void* cd_wq_worker_f(void *arg)
 
 	while (w->active == 1) {
 		for (cd_fifo_dequeue(q, lh); lh != NULL; cd_fifo_dequeue(q, lh)) {
-			w->busy = 1;
 			work = cd_container_of(lh, struct cd_work, link);
 			pthread_mutex_unlock(&w->mutex);    /* allow for further enquing while work is being processed */
 			work->f(work->user_data);
@@ -51,9 +50,16 @@ static void* cd_wq_worker_f(void *arg)
 			pthread_mutex_lock(&w->mutex);
 		}
 
-		w->busy = 0;
-		if (w->active)
+		// do not exit:
+		// if is still active (regardless of CD_WQ_QUEUE_STOP_ type)
+		// if not active but it's CD_WQ_QUEUE_STOP_SOFT and queue is not empty (should continue to do work)
+		//
+		// Therefore to exit queue processing:
+		// if it's CD_WQ_QUEUE_STOP_HARD - set active to 0 (terminate processing, ignoring waiting work if any)
+		// if it's CD_WQ_QUEUE_STOP_SOFT - set active to 0 and wait till all work has been processed
+		if (w->active || ((w->flags & CD_WQ_QUEUE_STOP_SOFT) && !cd_fifo_empty(q))) {
 			pthread_cond_wait(&w->signal, &w->mutex);
+		}
 	}
 
 	pthread_mutex_unlock(&w->mutex);
@@ -65,19 +71,14 @@ static void cd_wq_worker_init(struct cd_worker *w, struct cd_workqueue *wq)
 	memset(w, 0, sizeof(struct cd_worker));
 	pthread_mutex_init(&w->mutex, NULL);
 	w->active = 0;
-	w->busy = 0;
 	w->wq = wq;
+	w->flags = wq->flags;
 	CD_INIT_LIST_HEAD(&w->queue);
 	pthread_cond_init(&w->signal, NULL);
 }
 
 static enum cd_error cd_wq_worker_deinit(struct cd_worker *w)
 {
-	if (w->busy == 1) {
-		CD_LOG_WARN("Skipping deinit of worker [%u], this worker is still busy", w->idx);
-		return CD_ERR_BUSY;
-	}
-
 	assert(cd_list_empty(&w->queue) != 0 && "Queue NOT EMPTY!\n");
 	if (cd_list_empty(&w->queue) == 0) {
 		CD_LOG_CRIT("QUEUE NOT EMPTY, worker [%u]", w->idx);
@@ -100,6 +101,8 @@ enum cd_error cd_wq_workqueue_init(struct cd_workqueue *wq, uint32_t workers_n, 
 		return CD_ERR_MEM;
 	}
 	wq->workers_n = workers_n;
+
+	wq->flags = wq->flags | CD_WQ_QUEUE_STOP_HARD;
 
 	if (workers_n > 0) {
 		wq->workers_active_n = 0;
@@ -265,7 +268,6 @@ enum cd_error cd_wq_queue_work(struct cd_workqueue *wq, struct cd_work* work)
 
 	pthread_mutex_lock(&w->mutex);													/* enqueue work (and move ownership to worker) */
 	cd_fifo_enqueue(&work->link, &w->queue);
-	w->busy = 1;
 	pthread_cond_signal(&w->signal);
 	pthread_mutex_unlock(&w->mutex);
 

@@ -23,17 +23,23 @@ enum cd_work_sync_async_type {
 };
 
 struct cd_worker {              /* thread wrapper */
+	uint8_t			flags;
 	uint8_t         idx;        /* index in workqueue table */
 	pthread_t       tid;
 	cd_fifo_queue    queue;      /* queue of work structs */
 	pthread_mutex_t mutex;
 	pthread_cond_t  signal;     /* signaled when new item is enqueued to this worker's queue */
 	uint8_t         active;		/* successfully created and waiting for work */
-	uint8_t         busy;		/* active thread (successfully created and waiting for work) may be busy while processing work */
 	struct cd_workqueue *wq;    /* owner */
 };
 
+enum cd_wq_queue_flags {
+	CD_WQ_QUEUE_STOP_SOFT,
+	CD_WQ_QUEUE_STOP_HARD
+};
+
 struct cd_workqueue {
+	uint8_t				flags;
 	uint8_t             running;            /* 0 - no, 1 - yes */
 	struct cd_worker    *workers;
 	uint8_t             workers_n;          /* number of worker threads */

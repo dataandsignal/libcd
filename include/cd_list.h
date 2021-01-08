@@ -671,4 +671,6 @@ static struct cd_list_head* cd_fifo_dequeue_f(cd_fifo_queue *q)
 		cd_list_first_entry((struct cd_list_head *)q,\
 					 type, member) })	\
 
+#define cd_fifo_empty(q) \
+	cd_list_empty((struct cd_list_head *)q)
 #endif /* CD_LIST_H */
