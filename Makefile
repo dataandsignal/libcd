@@ -5,7 +5,7 @@ SRCDIR 			= .
 DEBUGOUTPUTDIR 		= build/debug
 RELEASEOUTPUTDIR	= build/release
 SOURCES			= src/cd_wq.c src/cd_log.c
-INCLUDES		= -I.
+INCLUDES		= -I./src -Iinclude
 _OBJECTS		= $(SOURCES:.c=.o)
 DEBUGOBJECTS 		= $(patsubst %,$(DEBUGOUTPUTDIR)/%,$(_OBJECTS))
 RELEASEOBJECTS 		= $(patsubst %,$(RELEASEOUTPUTDIR)/%,$(_OBJECTS))
@@ -18,10 +18,10 @@ releaseall:	$(SOURCES) $(RELEASETARGET)
 # additional flags
 # CONFIG_DEBUG_LIST	- extensive debugging of list with external debugging
 # 			functions
-debug:		CFLAGS += -DDEBUG -g -ggdb3 -O0
+debug:		CFLAGS += -g -ggdb3 -O0
 debug:		debugall
 
-release:	CFLAGS += -DNDEBUG
+release:	CFLAGS +=
 release: 	releaseall
 
 test-debug:		debugall
@@ -54,8 +54,16 @@ all: release
 
 .DEFAULT_GOAL = release
 
-install: $(RELEASETARGET)
+install-debug: $(DEBUGTARGET)
+	cp $(DEBUGTARGET) /usr/local/lib/
+
+install-release: $(RELEASETARGET)
 	cp $(RELEASETARGET) /usr/local/lib/
+
+install: install-release
+
+uninstall:
+	rm /usr/local/lib/libcd.so
 
 clean:
 	rm -rf $(DEBUGOBJECTS) $(DEBUGTARGET) $(RELEASEOBJECTS) $(RELEASETARGET)
