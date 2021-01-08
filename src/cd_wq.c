@@ -43,6 +43,7 @@ static void* cd_wq_worker_f(void *arg)
 
 	while (w->active == 1) {
 		for (cd_fifo_dequeue(q, lh); lh != NULL; cd_fifo_dequeue(q, lh)) {
+			w->busy = 1;
 			work = cd_container_of(lh, struct cd_work, link);
 			pthread_mutex_unlock(&w->mutex);    /* allow for further enquing while work is being processed */
 			work->f(work->user_data);
@@ -51,7 +52,8 @@ static void* cd_wq_worker_f(void *arg)
 		}
 
 		w->busy = 0;
-		pthread_cond_wait(&w->signal, &w->mutex);
+		if (w->active)
+			pthread_cond_wait(&w->signal, &w->mutex);
 	}
 
 	pthread_mutex_unlock(&w->mutex);

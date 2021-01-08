@@ -57,7 +57,7 @@ static void* test_wq_queue_f(void *arg)
 static void test_wq_queue(void)
 {
 	uint32_t workers_n = 5;
-	const char *name = "Workqueue Test 1";
+	const char *name = "Workqueue Test 2";
 	struct cd_workqueue *wq = NULL;
 	struct cd_work *w1 = NULL, *w2 = NULL, *w3 = NULL;
 
@@ -86,7 +86,7 @@ static void test_wq_queue(void)
 
 	// TODO cd_wq_workqueue_stop() must wait for workers to finish (or terminate) processing of tasks
 	// Add config param to configure queue's behaviour in such cases
-	sleep(3);
+	sleep(0);
 	assert(CD_ERR_OK == cd_wq_workqueue_stop(wq));
 
 	pthread_mutex_lock(&test_wq_queue_counter_mutex);
