@@ -41,7 +41,7 @@ static void* cd_wq_worker_f(void *arg)
 	pthread_mutex_lock(&w->mutex);              /* sleep on the queue and process queued work element once awoken */
 	q = &w->queue;
 
-	while (w->active == 1) {
+	while (w->active || ((w->options.CD_WQ_QUEUE_OPTION_STOP == CD_WQ_QUEUE_OPTION_STOP_SOFT) && !cd_fifo_empty(q))) {
 		for (cd_fifo_dequeue(q, lh); lh != NULL; cd_fifo_dequeue(q, lh)) {
 			work = cd_container_of(lh, struct cd_work, link);
 			pthread_mutex_unlock(&w->mutex);    /* allow for further enquing while work is being processed */
@@ -57,7 +57,7 @@ static void* cd_wq_worker_f(void *arg)
 		// Therefore to exit queue processing:
 		// if it's CD_WQ_QUEUE_STOP_HARD - set active to 0 (terminate processing, ignoring waiting work if any)
 		// if it's CD_WQ_QUEUE_STOP_SOFT - set active to 0 and wait till all work has been processed
-		if (w->active || ((w->flags & CD_WQ_QUEUE_STOP_SOFT) && !cd_fifo_empty(q))) {
+		if (w->active || ((w->options.CD_WQ_QUEUE_OPTION_STOP == CD_WQ_QUEUE_OPTION_STOP_SOFT) && !cd_fifo_empty(q))) {
 			pthread_cond_wait(&w->signal, &w->mutex);
 		}
 	}
@@ -72,16 +72,19 @@ static void cd_wq_worker_init(struct cd_worker *w, struct cd_workqueue *wq)
 	pthread_mutex_init(&w->mutex, NULL);
 	w->active = 0;
 	w->wq = wq;
-	w->flags = wq->flags;
+	w->options = wq->options;
 	CD_INIT_LIST_HEAD(&w->queue);
 	pthread_cond_init(&w->signal, NULL);
 }
 
 static enum cd_error cd_wq_worker_deinit(struct cd_worker *w)
 {
-	assert(cd_list_empty(&w->queue) != 0 && "Queue NOT EMPTY!\n");
-	if (cd_list_empty(&w->queue) == 0) {
-		CD_LOG_CRIT("QUEUE NOT EMPTY, worker [%u]", w->idx);
+	if (w->options.CD_WQ_QUEUE_OPTION_STOP == CD_WQ_QUEUE_OPTION_STOP_SOFT) {
+		assert(cd_list_empty(&w->queue) != 0 && "Queue NOT EMPTY! Worker terminating processing of not empty queue...\n");
+	}
+
+	if (!cd_list_empty(&w->queue)) {
+		CD_LOG_CRIT("Warning, worker [%u] terminating processing of not empty queue...", w->idx);
 		return CD_ERR_BUSY;
 	}
 
@@ -102,7 +105,7 @@ enum cd_error cd_wq_workqueue_init(struct cd_workqueue *wq, uint32_t workers_n, 
 	}
 	wq->workers_n = workers_n;
 
-	wq->flags = wq->flags | CD_WQ_QUEUE_STOP_HARD;
+	wq->options.CD_WQ_QUEUE_OPTION_STOP = CD_WQ_QUEUE_OPTION_STOP_SOFT;
 
 	if (workers_n > 0) {
 		wq->workers_active_n = 0;
@@ -246,8 +249,6 @@ enum cd_error cd_wq_queue_work(struct cd_workqueue *wq, struct cd_work* work)
 {
 	struct cd_worker    *w = NULL;
 	uint8_t             idx = wq->next_worker_idx_to_use, sanity = 0xFF;
-
-	assert(wq->workers_active_n > 0 && "NO ACTIVE THREAD in the workqueue");
 
 	if (wq->workers_active_n == 0) {
 		CD_LOG_CRIT("NO ACTIVE WORKER THREAD in the workqueue [%s]", wq->name);

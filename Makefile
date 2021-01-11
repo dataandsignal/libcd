@@ -67,3 +67,5 @@ uninstall:
 
 clean:
 	rm -rf $(DEBUGOBJECTS) $(DEBUGTARGET) $(RELEASEOBJECTS) $(RELEASETARGET)
+
+clean-all: clean test-clean
