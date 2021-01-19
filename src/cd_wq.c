@@ -19,7 +19,7 @@ static void cd_wq_free_if_sync(struct cd_work *work)
 	{
 		case CD_WORK_SYNC:
 			if (work->f_dtor)
-				work->f_dtor(work);             /* call destructor in sync with job processing */
+				work->f_dtor(work->user_data);	/* call destructor in sync with job processing */
 			free(work);
 			work = NULL;
 			break;
