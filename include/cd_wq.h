@@ -30,6 +30,8 @@ struct cd_wq_queue_options {
 #define CD_WQ_QUEUE_OPTION_STOP_HARD 0
 #define CD_WQ_QUEUE_OPTION_STOP_SOFT 1
 
+#define cd_wq_set_option(wq, opt, val) if (wq) { wq->options.##opt = val; }
+
 #define cd_wq_clear_flag(wq, flag_mask) if (wq) { wq->flags &= (~flag) }
 #define cd_wq_configure(wq, flag, val) if (wq) { cd_wq_clear_flag(wq, flag_mask); wq->flags |= (val << flag) }
 
@@ -58,11 +60,13 @@ struct cd_workqueue {
 /* @brief   Start the worker threads.
  * @details After this returns the @workers_n variable in workqueue is set to the numbers of successfully created
  *          and now running threads. It isn't neccessary the same number that has been passed to this function. */
-enum cd_error cd_wq_workqueue_init(struct cd_workqueue *q, uint32_t workers_n, const char *name);
+enum cd_error cd_wq_workqueue_init(struct cd_workqueue *q, uint32_t workers_n, const char *name, uint8_t option_stop);
+enum cd_error cd_wq_workqueue_default_init(struct cd_workqueue *wq, uint32_t workers_n, const char *name);
 enum cd_error cd_wq_workqueue_deinit(struct cd_workqueue *wq);
 
 void cd_wq_workqueue_free(struct cd_workqueue *wq);
-struct cd_workqueue* cd_wq_workqueue_create(uint32_t workers_n, const char *name);
+struct cd_workqueue* cd_wq_workqueue_create(uint32_t workers_n, const char *name, uint8_t option_stop);
+struct cd_workqueue* cd_wq_workqueue_default_create(uint32_t workers_n, const char *name);
 enum cd_error cd_wq_workqueue_stop(struct cd_workqueue *wq);
 
 struct cd_work {

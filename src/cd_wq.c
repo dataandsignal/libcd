@@ -42,11 +42,16 @@ static void* cd_wq_worker_f(void *arg)
 	q = &w->queue;
 
 	while (w->active || ((w->options.CD_WQ_QUEUE_OPTION_STOP == CD_WQ_QUEUE_OPTION_STOP_SOFT) && !cd_fifo_empty(q))) {
-		for (cd_fifo_dequeue(q, lh); lh != NULL; cd_fifo_dequeue(q, lh)) {
+
+		cd_fifo_dequeue(q, lh);
+
+		if (lh) {
 			work = cd_container_of(lh, struct cd_work, link);
 			pthread_mutex_unlock(&w->mutex);    /* allow for further enquing while work is being processed */
+
 			work->f(work->user_data);
 			cd_wq_free_if_sync(work);
+
 			pthread_mutex_lock(&w->mutex);
 		}
 
@@ -57,11 +62,25 @@ static void* cd_wq_worker_f(void *arg)
 		// Therefore to exit queue processing:
 		// if it's CD_WQ_QUEUE_STOP_HARD - set active to 0 (terminate processing, ignoring waiting work if any)
 		// if it's CD_WQ_QUEUE_STOP_SOFT - set active to 0 and wait till all work has been processed
-		if (w->active || ((w->options.CD_WQ_QUEUE_OPTION_STOP == CD_WQ_QUEUE_OPTION_STOP_SOFT) && !cd_fifo_empty(q))) {
-			pthread_cond_wait(&w->signal, &w->mutex);
+		//if (w->active || ((w->options.CD_WQ_QUEUE_OPTION_STOP == CD_WQ_QUEUE_OPTION_STOP_SOFT) && !cd_fifo_empty(q))) {
+		//	pthread_cond_wait(&w->signal, &w->mutex);
+		//}
+
+		if (!w->active) {
+
+			if ((w->options.CD_WQ_QUEUE_OPTION_STOP == CD_WQ_QUEUE_OPTION_STOP_HARD) || 
+					((w->options.CD_WQ_QUEUE_OPTION_STOP == CD_WQ_QUEUE_OPTION_STOP_SOFT) && cd_fifo_empty(q))) {
+				goto exit;
+			}
+
+		} else {
+
+			if (cd_fifo_empty(q))
+				pthread_cond_wait(&w->signal, &w->mutex);
 		}
 	}
 
+exit:
 	pthread_mutex_unlock(&w->mutex);
 	return NULL;
 }
@@ -94,7 +113,7 @@ static enum cd_error cd_wq_worker_deinit(struct cd_worker *w)
 	return CD_ERR_OK;
 }
 
-enum cd_error cd_wq_workqueue_init(struct cd_workqueue *wq, uint32_t workers_n, const char *name)
+enum cd_error cd_wq_workqueue_init(struct cd_workqueue *wq, uint32_t workers_n, const char *name, uint8_t option_stop)
 {
 	struct cd_worker    *w = NULL;
 
@@ -105,7 +124,7 @@ enum cd_error cd_wq_workqueue_init(struct cd_workqueue *wq, uint32_t workers_n, 
 	}
 	wq->workers_n = workers_n;
 
-	wq->options.CD_WQ_QUEUE_OPTION_STOP = CD_WQ_QUEUE_OPTION_STOP_SOFT;
+	wq->options.CD_WQ_QUEUE_OPTION_STOP = option_stop;
 
 	if (workers_n > 0) {
 		wq->workers_active_n = 0;
@@ -136,6 +155,11 @@ enum cd_error cd_wq_workqueue_init(struct cd_workqueue *wq, uint32_t workers_n, 
 	}
 }
 
+enum cd_error cd_wq_workqueue_default_init(struct cd_workqueue *wq, uint32_t workers_n, const char *name)
+{
+	return cd_wq_workqueue_init(wq, workers_n, name, CD_WQ_QUEUE_OPTION_STOP_SOFT);
+}
+
 enum cd_error cd_wq_workqueue_deinit(struct cd_workqueue *wq)
 {
 	struct cd_worker    *w = NULL;
@@ -160,7 +184,7 @@ void cd_wq_workqueue_free(struct cd_workqueue *wq)
 	return;
 }
 
-struct cd_workqueue* cd_wq_workqueue_create(uint32_t workers_n, const char *name)
+struct cd_workqueue* cd_wq_workqueue_create(uint32_t workers_n, const char *name, uint8_t option_stop)
 {
 	enum cd_error   err = CD_ERR_OK;
 	struct cd_workqueue* wq;
@@ -168,7 +192,7 @@ struct cd_workqueue* cd_wq_workqueue_create(uint32_t workers_n, const char *name
 	if (wq == NULL) {
 		return NULL;
 	}
-	err = cd_wq_workqueue_init(wq, workers_n, name);
+	err = cd_wq_workqueue_init(wq, workers_n, name, option_stop);
 	if (err  != CD_ERR_OK) {
 		switch (err) {
 
@@ -185,6 +209,11 @@ struct cd_workqueue* cd_wq_workqueue_create(uint32_t workers_n, const char *name
 		}
 	}
 	return wq;
+}
+
+struct cd_workqueue* cd_wq_workqueue_default_create(uint32_t workers_n, const char *name)
+{
+	return cd_wq_workqueue_create(workers_n, name, CD_WQ_QUEUE_OPTION_STOP_SOFT);
 }
 
 enum cd_error cd_wq_workqueue_stop(struct cd_workqueue *wq)
