@@ -20,8 +20,6 @@ static void cd_wq_free_if_sync(struct cd_work *work)
 		case CD_WORK_SYNC:
 			if (work->f_dtor)
 				work->f_dtor(work->user_data);	/* call destructor in sync with job processing */
-			free(work);
-			work = NULL;
 			break;
 
 		case CD_WORK_ASYNC:
@@ -51,20 +49,20 @@ static void* cd_wq_worker_f(void *arg)
 
 			work->f(work->user_data);
 			cd_wq_free_if_sync(work);
+			free(work);
+			work = NULL;
 
 			pthread_mutex_lock(&w->mutex);
 		}
 
 		// do not exit:
-		// if is still active (regardless of CD_WQ_QUEUE_STOP_ type)
-		// if not active but it's CD_WQ_QUEUE_STOP_SOFT and queue is not empty (should continue to do work)
+		//	if is still active (regardless of CD_WQ_QUEUE_STOP_ type)
+		//		- if it's empty then sleep, if it's not empty then continue processing work
+		//	if not active but it's CD_WQ_QUEUE_STOP_SOFT and queue is not empty (continue to do work)
 		//
 		// Therefore to exit queue processing:
 		// if it's CD_WQ_QUEUE_STOP_HARD - set active to 0 (terminate processing, ignoring waiting work if any)
 		// if it's CD_WQ_QUEUE_STOP_SOFT - set active to 0 and wait till all work has been processed
-		//if (w->active || ((w->options.CD_WQ_QUEUE_OPTION_STOP == CD_WQ_QUEUE_OPTION_STOP_SOFT) && !cd_fifo_empty(q))) {
-		//	pthread_cond_wait(&w->signal, &w->mutex);
-		//}
 
 		if (!w->active) {
 
@@ -98,14 +96,33 @@ static void cd_wq_worker_init(struct cd_worker *w, struct cd_workqueue *wq)
 
 static enum cd_error cd_wq_worker_deinit(struct cd_worker *w)
 {
+	struct cd_list_head *it = NULL, *n = NULL;
+
 	if (w->options.CD_WQ_QUEUE_OPTION_STOP == CD_WQ_QUEUE_OPTION_STOP_SOFT) {
 		assert(cd_list_empty(&w->queue) != 0 && "Queue NOT EMPTY! Worker terminating processing of not empty queue...\n");
 	}
 
 	if (!cd_list_empty(&w->queue)) {
 		CD_LOG_CRIT("Warning, worker [%u] terminating processing of not empty queue...", w->idx);
-		return CD_ERR_BUSY;
 	}
+
+	// TODO make optionall to call destructors of not processed tasks
+	cd_list_for_each_safe(it, n, &w->queue)
+	{
+		struct cd_work *work = cd_container_of(it, struct cd_work, link);
+		cd_list_del_init(it);
+
+		// This will call user's destructor for task which has not been processed
+		// TODO make optionall
+		if (work->f_dtor) {
+			work->f_dtor(work->user_data);
+		}
+
+		free(work);
+		work = NULL;
+	}
+
+	assert(cd_list_empty(&w->queue));
 
 	pthread_mutex_destroy(&w->mutex);
 	pthread_cond_destroy(&w->signal);
@@ -177,11 +194,16 @@ enum cd_error cd_wq_workqueue_deinit(struct cd_workqueue *wq)
 	return CD_ERR_OK;
 }
 
-void cd_wq_workqueue_free(struct cd_workqueue *wq)
-{                /* queue MUST be empty now */
-	cd_wq_workqueue_deinit(wq);
+enum cd_error cd_wq_workqueue_free(struct cd_workqueue *wq)
+{
+	enum cd_error err = CD_ERR_OK;
+
+	err = cd_wq_workqueue_deinit(wq);
+	if (err != CD_ERR_OK)
+		return err;
+
 	free(wq);
-	return;
+	return CD_ERR_OK;
 }
 
 struct cd_workqueue* cd_wq_workqueue_create(uint32_t workers_n, const char *name, uint8_t option_stop)

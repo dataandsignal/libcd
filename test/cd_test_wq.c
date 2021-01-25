@@ -54,7 +54,7 @@ static void* test_wq_queue_default_f(void *arg)
     fflush(stdout);
 
     // Add delay, to make tasks hanging while queue is requested to stop
-    sleep(0.5);
+    usleep(1000);
 
     pthread_mutex_unlock(&test_wq_queue_default_counter_mutex);
     return NULL;
@@ -112,7 +112,7 @@ static void test_wq_queue_default(void)
 	assert(CD_ERR_OK == cd_wq_queue_work(wq, w9));
 
 	// Let the queue process at least 1 task
-	sleep(1);
+	usleep(2000);
 
 	// Note, cd_wq_workqueue_stop() must wait for workers to finish (or terminate) processing of tasks if any of them have not yet been processed.
 	// You can configure queue's behaviour in such cases with cd_wq_configure():
@@ -142,7 +142,7 @@ static void* test_wq_queue_soft_f(void *arg)
     fflush(stdout);
 
     // Add delay, to make tasks hanging while queue is requested to stop
-    sleep(0.5);
+    usleep(1000);
 
     pthread_mutex_unlock(&test_wq_queue_soft_counter_mutex);
     return NULL;
@@ -200,7 +200,7 @@ static void test_wq_queue_soft(void)
 	assert(CD_ERR_OK == cd_wq_queue_work(wq, w9));
 
 	// Let the queue process at least 1 task
-	sleep(1);
+	usleep(2000);
 
 	// Test that cd_wq_workqueue_stop() waits for workers to finish processing of tasks.
 	// Tasks are not processed yet, because of delay applied to user's processing function.
@@ -233,7 +233,7 @@ static void* test_wq_queue_default_sync_f(void *arg)
     fflush(stdout);
 
     // Add delay, to make tasks hanging while queue is requested to stop
-    sleep(0.5);
+    usleep(1000);
 
     pthread_mutex_unlock(user_data->mutex);
     return NULL;
@@ -337,7 +337,7 @@ static void test_wq_queue_default_sync(void)
 	assert(CD_ERR_OK == cd_wq_queue_work(wq, w9));
     
 	// Let the queue process at least 1 task
-	sleep(1);
+	usleep(2000);
 
 	assert(CD_ERR_OK == cd_wq_workqueue_stop(wq));
 
@@ -368,7 +368,7 @@ static void* test_wq_queue_hard_f(void *arg)
     fflush(stdout);
     
     // Add delay, to make tasks hanging while queue is requested to stop
-    sleep(1);
+    usleep(1000);
 
     pthread_mutex_unlock(user_data->mutex);
     return NULL;
@@ -384,7 +384,7 @@ static void test_wq_queue_hard_f_dtor(void *arg)
 
 static void test_wq_queue_hard(void)
 {
-	uint32_t workers_n = 1;
+	uint32_t workers_n = 2;
 	const char *name = "Workqueue Test Hard";
 	struct cd_workqueue *wq = NULL;
 	struct cd_work *w1 = NULL, *w2 = NULL, *w3 = NULL;
@@ -474,7 +474,7 @@ static void test_wq_queue_hard(void)
 	assert(CD_ERR_OK == cd_wq_queue_work(wq, w9));
 
 	// Let the queue process at least 1 task
-	sleep(1);
+	usleep(2000);
 
 	assert(CD_ERR_OK == cd_wq_workqueue_stop(wq));
 
