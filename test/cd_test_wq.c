@@ -25,8 +25,9 @@ static void test_wq_create(void)
 	uint32_t workers_n = 5;
 	const char *name = "Workqueue Test Create";
 	struct cd_workqueue *wq = NULL;
-	
-	
+
+	printf("TEST WQ CREATE\n");
+
 	wq = cd_wq_workqueue_create(workers_n, name, CD_WQ_QUEUE_OPTION_STOP_HARD);
 
 	assert(wq != NULL);
@@ -91,6 +92,9 @@ static void test_wq_queue_default(void)
 	w7 = cd_wq_work_create(CD_WORK_SYNC, (void *) &test_wq_queue_default_counter, 561, test_wq_queue_default_f, NULL);
 	w8 = cd_wq_work_create(CD_WORK_SYNC, (void *) &test_wq_queue_default_counter, 562, test_wq_queue_default_f, NULL);
 	w9 = cd_wq_work_create(CD_WORK_SYNC, (void *) &test_wq_queue_default_counter, 563, test_wq_queue_default_f, NULL);
+
+	printf("TEST WQ DEFAULT\n");
+
 	assert(w1 != NULL);
 	assert(w2 != NULL);
 	assert(w3 != NULL);
@@ -179,6 +183,9 @@ static void test_wq_queue_soft(void)
 	w7 = cd_wq_work_create(CD_WORK_SYNC, (void *) &test_wq_queue_soft_counter, 561, test_wq_queue_soft_f, NULL);
 	w8 = cd_wq_work_create(CD_WORK_SYNC, (void *) &test_wq_queue_soft_counter, 562, test_wq_queue_soft_f, NULL);
 	w9 = cd_wq_work_create(CD_WORK_SYNC, (void *) &test_wq_queue_soft_counter, 563, test_wq_queue_soft_f, NULL);
+
+	printf("TEST WQ SOFT\n");
+
 	assert(w1 != NULL);
 	assert(w2 != NULL);
 	assert(w3 != NULL);
@@ -216,6 +223,7 @@ static void test_wq_queue_soft(void)
 }
 
 uint8_t test_wq_queue_default_sync_counter;
+uint8_t test_wq_queue_default_sync_dctor_counter;
 pthread_mutex_t test_wq_queue_default_sync_counter_mutex;
 
 struct test_wq_queue_default_sync_user_data {
@@ -242,8 +250,13 @@ static void* test_wq_queue_default_sync_f(void *arg)
 static void test_wq_queue_default_sync_f_dtor(void *arg)
 {
     struct test_wq_queue_default_sync_user_data *user_data = (struct test_wq_queue_default_sync_user_data*) arg;
-    printf("[id=%d] -> ~() User dtor, free user data\n", user_data->something);
+    pthread_mutex_lock(user_data->mutex);
+    printf("Default sync: [id=%d] -> ~() User dtor, free user data\n", user_data->something);
     fflush(stdout);
+    test_wq_queue_default_sync_dctor_counter++;
+    printf("Default sync: [id=%d] Dctor counter: %u\n", user_data->something, test_wq_queue_default_sync_dctor_counter);
+    fflush(stdout);
+    pthread_mutex_unlock(user_data->mutex);
     free(user_data);
 }
 
@@ -264,6 +277,8 @@ static void test_wq_queue_default_sync(void)
 	struct test_wq_queue_default_sync_user_data *user_data_7 = malloc(sizeof(struct test_wq_queue_default_sync_user_data));
 	struct test_wq_queue_default_sync_user_data *user_data_8 = malloc(sizeof(struct test_wq_queue_default_sync_user_data));
 	struct test_wq_queue_default_sync_user_data *user_data_9 = malloc(sizeof(struct test_wq_queue_default_sync_user_data));
+
+	printf("TEST WQ DEFAULT SYNC\n");
 
 	assert(user_data_1 != NULL);
 	assert(user_data_2 != NULL);
@@ -295,6 +310,7 @@ static void test_wq_queue_default_sync(void)
 	user_data_9->something = 9;
 
 	test_wq_queue_default_sync_counter = 0;
+	test_wq_queue_default_sync_dctor_counter = 0;
 	pthread_mutex_init(&test_wq_queue_default_sync_counter_mutex, NULL);
 	wq = cd_wq_workqueue_default_create(workers_n, name);
 
@@ -339,10 +355,12 @@ static void test_wq_queue_default_sync(void)
 	// Let the queue process at least 1 task
 	usleep(2000);
 
+	// Will block till all work is executed, dctors are called and queue is empty.
 	assert(CD_ERR_OK == cd_wq_workqueue_stop(wq));
 
 	pthread_mutex_lock(&test_wq_queue_default_sync_counter_mutex);
 	assert(test_wq_queue_default_sync_counter == 9);
+	assert(test_wq_queue_default_sync_dctor_counter == 9);
 	pthread_mutex_unlock(&test_wq_queue_default_sync_counter_mutex);
 	
 	cd_wq_workqueue_free(wq);
@@ -351,6 +369,7 @@ static void test_wq_queue_default_sync(void)
 }
 
 uint8_t test_wq_queue_hard_counter;
+uint8_t test_wq_queue_hard_dctor_counter;
 pthread_mutex_t test_wq_queue_hard_counter_mutex;
 
 struct test_wq_queue_hard_user_data {
@@ -377,8 +396,13 @@ static void* test_wq_queue_hard_f(void *arg)
 static void test_wq_queue_hard_f_dtor(void *arg)
 {
     struct test_wq_queue_hard_user_data *user_data = (struct test_wq_queue_hard_user_data*) arg;
-    printf("[id=%d] -> ~() User dtor, free user data\n", user_data->id);
+    pthread_mutex_lock(user_data->mutex);
+    printf("Hard: [id=%d] -> ~() User dtor, free user data\n", user_data->id);
     fflush(stdout);
+    test_wq_queue_hard_dctor_counter++;
+    printf("Hard: [id=%d] Dctor counter: %u\n", user_data->id, test_wq_queue_hard_dctor_counter);
+    fflush(stdout);
+    pthread_mutex_unlock(user_data->mutex);
     free(user_data);
 }
 
@@ -432,6 +456,7 @@ static void test_wq_queue_hard(void)
 	user_data_9->id = 9;
 
 	test_wq_queue_hard_counter = 0;
+	test_wq_queue_hard_dctor_counter = 0;
 	pthread_mutex_init(&test_wq_queue_hard_counter_mutex, NULL);
 	wq = cd_wq_workqueue_create(workers_n, name, CD_WQ_QUEUE_OPTION_STOP_HARD);
 
@@ -478,11 +503,12 @@ static void test_wq_queue_hard(void)
 
 	assert(CD_ERR_OK == cd_wq_workqueue_stop(wq));
 
-	pthread_mutex_lock(&test_wq_queue_hard_counter_mutex);
-	//assert(test_wq_queue_hard_counter == 9);
-	pthread_mutex_unlock(&test_wq_queue_hard_counter_mutex);
-	
+	// Will block till all threads are joined, CD_WORK_SYNC dctors are called and queue is empty.
 	cd_wq_workqueue_free(wq);
+
+	pthread_mutex_lock(&test_wq_queue_hard_counter_mutex);
+	assert(test_wq_queue_hard_dctor_counter == 9);
+	pthread_mutex_unlock(&test_wq_queue_hard_counter_mutex);
 
 	pthread_mutex_destroy(&test_wq_queue_hard_counter_mutex);
 }

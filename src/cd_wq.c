@@ -13,30 +13,25 @@
 #include "../include/cd_log.h"
 
 
-static void cd_wq_free_if_sync(struct cd_work *work)
+static void cd_wq_call_dctor(struct cd_work *work, enum cd_work_sync_async_type work_type)
 {
-	switch (work->type)
-	{
-		case CD_WORK_SYNC:
-			if (work->f_dtor)
-				work->f_dtor(work->user_data);	/* call destructor in sync with job processing */
-			break;
-
-		case CD_WORK_ASYNC:
-		default:
-			break;                              /* do not call destructor, do not free, user will handle this later */
+	if (work->type == work_type) {
+		if (work->f_dtor) {
+			work->f_dtor(work->user_data);
+			work->f_dtor = NULL;
+		}
 	}
 }
 
 static void* cd_wq_worker_f(void *arg)
 {
 	cd_fifo_queue            *q;
-	struct cd_work          *work;              /* iterator over enqueued work elements */
+	struct cd_work          *work;
 	struct cd_list_head      *lh;
 
 	struct cd_worker *w = (struct cd_worker*) arg;
 
-	pthread_mutex_lock(&w->mutex);              /* sleep on the queue and process queued work element once awoken */
+	pthread_mutex_lock(&w->mutex);
 	q = &w->queue;
 
 	while (w->active || ((w->options.CD_WQ_QUEUE_OPTION_STOP == CD_WQ_QUEUE_OPTION_STOP_SOFT) && !cd_fifo_empty(q))) {
@@ -45,10 +40,15 @@ static void* cd_wq_worker_f(void *arg)
 
 		if (lh) {
 			work = cd_container_of(lh, struct cd_work, link);
-			pthread_mutex_unlock(&w->mutex);    /* allow for further enquing while work is being processed */
+
+			// Allow for further enquing while work is being processed.
+			pthread_mutex_unlock(&w->mutex);
 
 			work->f(work->user_data);
-			cd_wq_free_if_sync(work);
+
+			// Execute sync destructors.
+			cd_wq_call_dctor(work, CD_WORK_SYNC);
+
 			free(work);
 			work = NULL;
 
@@ -106,17 +106,14 @@ static enum cd_error cd_wq_worker_deinit(struct cd_worker *w)
 		CD_LOG_CRIT("Warning, worker [%u] terminating processing of not empty queue...", w->idx);
 	}
 
-	// TODO make optionall to call destructors of not processed tasks
 	cd_list_for_each_safe(it, n, &w->queue)
 	{
 		struct cd_work *work = cd_container_of(it, struct cd_work, link);
 		cd_list_del_init(it);
 
-		// This will call user's destructor for task which has not been processed
-		// TODO make optionall
-		if (work->f_dtor) {
-			work->f_dtor(work->user_data);
-		}
+		// Execute sync destructors.
+		// This will call user's destructor for the task which has not been processed.
+		cd_wq_call_dctor(work, CD_WORK_SYNC);
 
 		free(work);
 		work = NULL;
