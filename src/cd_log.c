@@ -30,9 +30,9 @@ int cd_util_dt(char *buf)
 
 	if (localtime_r(&now, &t) != 0) { /* localtime_r is thread safe (and therefore reentrant) */
 		strftime(buf, 20, "%Y-%m-%d_%H-%M-%S", &t);
-		return CD_ERR_OK;
+		return 0;
 	}
-	return CD_ERR_FAIL;
+	return -1;
 }
 
 int cd_util_dt_detail(char *buf)
@@ -46,57 +46,43 @@ int cd_util_dt_detail(char *buf)
 		strftime(tmp, 20, "%Y-%m-%d_%H-%M-%S", &t);
 		tmp[19] = '\0';
 		sprintf(buf, "%s:%06ld", tmp, tv.tv_usec); /* append microseconds, buf must be at least 28 chars */
-		return CD_ERR_OK;
+		return 0;
 	}
-	return CD_ERR_FAIL;
+	return -1;
 }
 
-int cd_util_openlogs(const char *dir, const char *name)
+int cd_util_openlog(const char *dir, const char *name)
 {
 	FILE	*stream;
-	int		err;
 	char	*full_path;
 
 	if (dir == NULL)
-		return CD_ERR_BAD_CALL;
+		return -1;
 
 	full_path = malloc(strlen(dir) + strlen(name) + 1 + 27 + 1 + 3 + 1);
 	if (full_path == NULL)
-		return CD_ERR_MEM;
+		return -1;
 
 	sprintf(full_path, "%s%s_", dir, name);
-	if (cd_util_dt_detail(full_path + strlen(dir) + strlen(name) + 1) != CD_ERR_OK) {
-		err = CD_ERR_FAIL;
-		goto fail;
+	if (cd_util_dt_detail(full_path + strlen(dir) + strlen(name) + 1) == -1) {
+		return -1;
 	}
-	strcpy(full_path + strlen(dir) + strlen(name) + 27, ".log"); /* stdout log */
-	if ((stream = fopen(full_path, "w+")) == NULL) {
-		err = CD_ERR_FOPEN_STDOUT;
-		goto fail;
-	}
-	fclose(stream);
-	if (freopen(full_path, "w", stdout) == NULL) { /* redirect stdout */
-		err = CD_ERR_FREOPEN_STDOUT;
-		goto fail;
-	}
-	strcpy(full_path + strlen(dir) + strlen(name) + 27, ".err"); /* stderr log */
-	if ((stream = fopen(full_path, "w+")) == NULL) {
-		err = CD_ERR_FOPEN_STDERR;
-		goto fail;
-	}
-	fclose(stream);
-	if (freopen(full_path, "w", stderr) == NULL) { /* redirect stderr */
-		err = CD_ERR_FREOPEN_STDERR;
-		goto fail;
-	}
-	free(full_path);
-	return CD_ERR_OK;
 
-fail:
-	if (full_path != NULL) {
-		free(full_path);
+	strcpy(full_path + strlen(dir) + strlen(name) + 27, ".log");
+	if ((stream = fopen(full_path, "w+")) == NULL) {
+		return -1;
 	}
-	return err;
+
+	fclose(stream);
+	if (freopen(full_path, "w", stdout) == NULL) {
+		return -1;
+	}
+	if (freopen(full_path, "w", stderr) == NULL) {
+		return -1;
+	}
+
+	free(full_path);
+	return 0;
 }
 
 int cd_util_log(FILE *stream, const char *fmt, ...)
@@ -105,7 +91,7 @@ int cd_util_log(FILE *stream, const char *fmt, ...)
 	char 	buf[4096];
 	char	dt[28];
 
-	if (cd_util_dt_detail(dt) != CD_ERR_OK) {
+	if (cd_util_dt_detail(dt) == -1) {
 		return CD_ERR_FAIL;
 	}
 	va_start(args, fmt);
@@ -123,7 +109,7 @@ int cd_util_log_perr(FILE *stream, const char *fmt, ...)
 	char 	buf[4096];
 	char	dt[28];
 
-	if (cd_util_dt_detail(dt) != CD_ERR_OK) {
+	if (cd_util_dt_detail(dt) == -1) {
 		return CD_ERR_FAIL;
 	}
 	va_start(args, fmt);
@@ -168,7 +154,7 @@ int cd_util_daemonize(const char *dir, int noclose, const char *logname)
 		}
 	}
 
-	if (cd_util_openlogs("./log/", logname) != CD_ERR_OK)
+	if (cd_util_openlog("./log/", logname) != CD_ERR_OK)
 		return CD_ERR_IO_ERROR;
 
 	if (noclose == 0) {																				/* close open descriptors */
@@ -195,7 +181,7 @@ int cd_util_chdir_umask_openlog(const char *dir, int noclose, const char *lognam
 			return CD_ERR_CHDIR;
 		}
 	}
-	if ((logname != NULL) && (cd_util_openlogs("./log/", logname) != CD_ERR_OK))
+	if ((logname != NULL) && (cd_util_openlog("./log/", logname) != CD_ERR_OK))
 		return CD_ERR_IO_ERROR;
 
 	if (noclose == 0) {																				/* close open descriptors */

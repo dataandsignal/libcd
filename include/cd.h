@@ -39,6 +39,11 @@
 #include <stdarg.h>
 #include <stddef.h>
 
+#include "cd_list.h"
+#include "cd_hash.h"
+#include "cd_wq.h"
+#include "cd_log.h"
+
 #define CD_NANOSEC_PER_SEC 1000000000U
 
 enum cd_error {
@@ -59,5 +64,53 @@ enum cd_error {
 	CD_ERR_FREOPEN_STDOUT,
 	CD_ERR_FREOPEN_STDERR
 };
+
+typedef enum cd_endpoint_type {
+	CD_ENDPOINT_TYPE_UDP,
+	CD_ENDPOINT_TYPE_TCP,
+	CD_ENDPOINT_TYPE_HTTP,
+	CD_ENDPOINT_TYPE_HTTPS,
+	CD_ENDPOINT_TYPE_WEBSOCKET
+} cd_endpoint_type_t;
+
+struct cd_endpoint_s;
+typedef void (*cd_endpoint_on_msg_cb)(void*);
+
+typedef struct cd_endpoint_s {
+	cd_endpoint_type_t		type;
+	uint16_t				port;
+	cd_endpoint_on_msg_cb	cb_on_msg;
+} cd_endpoint_t;
+
+int cd_endpoint_init(cd_endpoint_t* endpoint, cd_endpoint_type_t type);
+int cd_endpoint_set_port(cd_endpoint_t *endpoint, uint16_t port);
+int cd_endpoint_set_on_message_callback(cd_endpoint_t *endpoint, cd_endpoint_on_msg_cb cb);
+int cd_endpoint_start(cd_endpoint_t *endpoint);
+
+// User interface
+
+typedef struct cd_udp_endpoint_s {
+	cd_endpoint_t	base;
+} cd_udp_endpoint_t;
+
+typedef struct cd_tcp_endpoint_s {
+	cd_endpoint_t	base;
+} cd_tcp_endpoint_t;
+
+cd_udp_endpoint_t* cd_udp_endpoint_create(void);
+cd_tcp_endpoint_t* cd_tcp_endpoint_create(void);
+
+int cd_udp_endpoint_set_port(cd_udp_endpoint_t *udp, uint16_t port);
+int cd_tcp_endpoint_set_port(cd_tcp_endpoint_t *tcp, uint16_t port);
+
+int cd_udp_endpoint_set_on_message_callback(cd_udp_endpoint_t *udp, cd_endpoint_on_msg_cb cb);
+int cd_tcp_endpoint_set_on_message_callback(cd_tcp_endpoint_t *tcp, cd_endpoint_on_msg_cb cb);
+
+int cd_udp_endpoint_start(cd_udp_endpoint_t *udp);
+int cd_tcp_endpoint_start(cd_tcp_endpoint_t *tcp);
+
+void cd_udp_endpoint_destroy(cd_udp_endpoint_t** udp);
+void cd_tcp_endpoint_destroy(cd_tcp_endpoint_t** tcp);
+
 
 #endif // CD_H

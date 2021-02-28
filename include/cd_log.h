@@ -23,7 +23,7 @@
 void cd_util_calc_timespec_diff(struct timespec *t1, struct timespec *t2, struct timespec *dt) __attribute__ ((nonnull(1,2,3)));
 int cd_util_dt(char *buf);
 int cd_util_dt_detail(char *buf);
-int cd_util_openlogs(const char *dir, const char *name);
+int cd_util_openlog(const char *dir, const char *name);
 int cd_util_log(FILE *stream, const char *fmt, ...);
 int cd_util_log_perr(FILE *stream, const char *fmt, ...);
 int cd_util_daemonize(const char *dir, int noclose, const char *logname);
@@ -35,12 +35,12 @@ int cd_util_chdir_umask_openlog(const char *dir, int noclose, const char *lognam
 #define CD_D_ERR(fmt, ...)    do { } while (0)
 #endif
 
-#define CD_LOG_ERR(fmt, ...) cd_util_log(stderr, "%s\t%s:%d:%s():\t" fmt, "ERR ", __FILE__, __LINE__, __func__, __VA_ARGS__)
-#define CD_LOG_PERR(fmt, ...) cd_util_log_perr(stderr, "%s\t%s:%d:%s():\t" fmt, "ERR ", __FILE__, __LINE__, __func__, __VA_ARGS__)
-#define CD_LOG_INFO(fmt, ...) cd_util_log(stderr, "%s\t%s:%d:%s():\t" fmt, "INFO", __FILE__, __LINE__, __func__, __VA_ARGS__)
-#define CD_LOG_ALERT(fmt, ...) cd_util_log(stderr, "%s\t%s:%d:%s():\t" fmt, "ALERT", __FILE__, __LINE__, __func__, __VA_ARGS__)
-#define CD_LOG_WARN(fmt, ...) cd_util_log(stderr, "%s\t%s:%d:%s():\t" fmt, "WARN", __FILE__, __LINE__, __func__, __VA_ARGS__)
-#define CD_LOG_CRIT(fmt, ...) cd_util_log(stderr, "%s\t%s:%d:%s():\t" fmt, "CRIT", __FILE__, __LINE__, __func__, __VA_ARGS__)
+#define CD_LOG_ERR(fmt, ...) cd_util_log(stderr, "%s\t%s:%d:%s():\t" fmt, "ERR ", __FILE__, __LINE__, __func__, ##__VA_ARGS__)
+#define CD_LOG_PERR(fmt, ...) cd_util_log_perr(stderr, "%s\t%s:%d:%s():\t" fmt, "ERR ", __FILE__, __LINE__, __func__, ##__VA_ARGS__)
+#define CD_LOG_INFO(fmt, ...) cd_util_log(stderr, "%s\t%s:%d:%s():\t" fmt, "INFO", __FILE__, __LINE__, __func__, ##__VA_ARGS__)
+#define CD_LOG_ALERT(fmt, ...) cd_util_log(stderr, "%s\t%s:%d:%s():\t" fmt, "ALERT", __FILE__, __LINE__, __func__, ##__VA_ARGS__)
+#define CD_LOG_WARN(fmt, ...) cd_util_log(stderr, "%s\t%s:%d:%s():\t" fmt, "WARN", __FILE__, __LINE__, __func__, ##__VA_ARGS__)
+#define CD_LOG_CRIT(fmt, ...) cd_util_log(stderr, "%s\t%s:%d:%s():\t" fmt, "CRIT", __FILE__, __LINE__, __func__, ##__VA_ARGS__)
 
 #ifdef DDEBUG
     #define CD_DEBUG_LOG_ERR(fmt, ...) CD_LOG_ERR(fmt, ...)

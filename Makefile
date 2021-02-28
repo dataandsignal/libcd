@@ -4,7 +4,7 @@ LDFLAGS      = -shared
 SRCDIR 			= .
 DEBUGOUTPUTDIR 		= build/debug
 RELEASEOUTPUTDIR	= build/release
-SOURCES			= src/cd_wq.c src/cd_log.c
+SOURCES			= src/cd_wq.c src/cd_log.c src/cd_endpoint.c
 INCLUDES		= -I./src -Iinclude
 _OBJECTS		= $(SOURCES:.c=.o)
 DEBUGOBJECTS 		= $(patsubst %,$(DEBUGOUTPUTDIR)/%,$(_OBJECTS))
@@ -12,8 +12,14 @@ RELEASEOBJECTS 		= $(patsubst %,$(RELEASEOUTPUTDIR)/%,$(_OBJECTS))
 DEBUGTARGET		= build/debug/libcd.so
 RELEASETARGET	= build/release/libcd.so
 
-debugall:	$(SOURCES) $(DEBUGTARGET)
-releaseall:	$(SOURCES) $(RELEASETARGET)
+debugprereqs:
+		mkdir -p $(DEBUGOUTPUTDIR)
+
+releaseprereqs:
+		mkdir -p $(RELEASEOUTPUTDIR)
+
+debugall:	debugprereqs $(SOURCES) $(DEBUGTARGET)
+releaseall:	releaseprereqs $(SOURCES) $(RELEASETARGET)
 
 # additional flags
 # CONFIG_DEBUG_LIST	- extensive debugging of list with external debugging
@@ -34,6 +40,17 @@ test:		test-release
 
 test-clean:
 		cd test && make clean
+
+examples-debug:		debugall
+		cd examples && make examples-debug
+
+examples-release:		releaseall
+		cd examples && make examples-release
+
+examples:		examples-release
+
+examples-clean:
+		cd examples && make clean
 
 $(DEBUGTARGET): $(DEBUGOBJECTS) 
 	$(CC) $(DEBUGOBJECTS) -o $@ $(LDFLAGS)
@@ -68,4 +85,4 @@ uninstall:
 clean:
 	rm -rf $(DEBUGOBJECTS) $(DEBUGTARGET) $(RELEASEOBJECTS) $(RELEASETARGET)
 
-clean-all: clean test-clean
+clean-all: clean test-clean examples-clean
