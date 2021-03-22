@@ -12,12 +12,17 @@
 #include "../include/cd.h"
 
 
-static void on_udp_msg(void* msg)
+static void* on_udp_msg(void *msg)
 {
-    if (!msg)
-	return;
+    cd_msg_t *m = msg;
 
-    printf("Got some work to do\n");
+    if (!m)
+	return NULL;
+
+    printf("Got %zu bytes to process\n", m->len);
+
+    // process m->data
+    return NULL;
 }
 
 int main(void)
@@ -40,9 +45,11 @@ int main(void)
 	return -1;
 
     cd_udp_endpoint_set_port(udp, 33226);
+    cd_udp_endpoint_set_workqueue_name(udp, "UDP workqueue");
+    cd_udp_endpoint_set_workqueue_threads_n(udp, 4);
     cd_udp_endpoint_set_on_message_callback(udp, on_udp_msg);
 
-    cd_udp_endpoint_start(udp);
+    cd_udp_endpoint_loop(udp);
 
     cd_udp_endpoint_destroy(&udp);
     return 0;

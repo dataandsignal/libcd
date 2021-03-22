@@ -39,12 +39,15 @@
 #include <stdarg.h>
 #include <stddef.h>
 
+#include <sys/resource.h>
+
 #include "cd_list.h"
 #include "cd_hash.h"
 #include "cd_wq.h"
 #include "cd_log.h"
 
 #define CD_NANOSEC_PER_SEC 1000000000U
+#define CD_STR_BUF_LEN 1000
 
 enum cd_error {
 	CD_ERR_OK,
@@ -74,12 +77,18 @@ typedef enum cd_endpoint_type {
 } cd_endpoint_type_t;
 
 struct cd_endpoint_s;
-typedef void (*cd_endpoint_on_msg_cb)(void*);
+struct cd_msg_s;
+typedef void* (*cd_endpoint_on_msg_cb)(void *);
 
 typedef struct cd_endpoint_s {
 	cd_endpoint_type_t		type;
 	uint16_t				port;
+	struct cd_workqueue		*wq;
+	uint32_t				wq_workers_n;
+	char					wq_name[CD_STR_BUF_LEN];
 	cd_endpoint_on_msg_cb	cb_on_msg;
+	int						sockfd;
+	struct sockaddr_in		servaddr, cliaddr;
 } cd_endpoint_t;
 
 int cd_endpoint_init(cd_endpoint_t* endpoint, cd_endpoint_type_t type);
@@ -88,6 +97,15 @@ int cd_endpoint_set_on_message_callback(cd_endpoint_t *endpoint, cd_endpoint_on_
 int cd_endpoint_start(cd_endpoint_t *endpoint);
 
 // User interface
+
+typedef struct cd_msg_s {
+	char *data;
+	size_t len;
+} cd_msg_t;
+
+cd_msg_t* cd_endpoint_msg_create(char *buf, size_t len);
+void cd_endpoint_msg_destroy(cd_msg_t **msg);
+void cd_endpoint_msg_dctor_f(void *o);
 
 typedef struct cd_udp_endpoint_s {
 	cd_endpoint_t	base;
@@ -103,14 +121,21 @@ cd_tcp_endpoint_t* cd_tcp_endpoint_create(void);
 int cd_udp_endpoint_set_port(cd_udp_endpoint_t *udp, uint16_t port);
 int cd_tcp_endpoint_set_port(cd_tcp_endpoint_t *tcp, uint16_t port);
 
+int cd_udp_endpoint_set_workqueue_name(cd_udp_endpoint_t *udp, const char *name);
+int cd_tcp_endpoint_set_workqueue_name(cd_tcp_endpoint_t *tcp, const char *name);
+
+int cd_udp_endpoint_set_workqueue_threads_n(cd_udp_endpoint_t *udp, uint32_t workers_n);
+int cd_tcp_endpoint_set_workqueue_threads_n(cd_tcp_endpoint_t *tcp, uint32_t workers_n);
+
 int cd_udp_endpoint_set_on_message_callback(cd_udp_endpoint_t *udp, cd_endpoint_on_msg_cb cb);
 int cd_tcp_endpoint_set_on_message_callback(cd_tcp_endpoint_t *tcp, cd_endpoint_on_msg_cb cb);
 
-int cd_udp_endpoint_start(cd_udp_endpoint_t *udp);
-int cd_tcp_endpoint_start(cd_tcp_endpoint_t *tcp);
+int cd_udp_endpoint_loop(cd_udp_endpoint_t *udp);
+int cd_tcp_endpoint_loop(cd_tcp_endpoint_t *tcp);
 
 void cd_udp_endpoint_destroy(cd_udp_endpoint_t** udp);
 void cd_tcp_endpoint_destroy(cd_tcp_endpoint_t** tcp);
 
+#define CD_UDP_BUFLEN 2000
 
 #endif // CD_H
