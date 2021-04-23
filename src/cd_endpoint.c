@@ -59,12 +59,50 @@ cd_udp_endpoint_t* cd_udp_endpoint_create(void)
 	return NULL;
     memset(udp, 0, sizeof(cd_udp_endpoint_t));
 
-    if (-1 == cd_endpoint_init(&udp->base, CD_ENDPOINT_TYPE_UDP)) {
-	free(udp);
-	return NULL;
+    return udp;
+}
+
+void cd_udp_endpoint_destroy(cd_udp_endpoint_t **udp)
+{
+    if (!udp || !(*udp))
+	return;
+    if ((*udp)->base.wq) {
+	cd_wq_workqueue_free(&(*udp)->base.wq);
+    }
+    free(*udp);
+    *udp = NULL;
+}
+
+int cd_udp_endpoint_init(cd_udp_endpoint_t *udp)
+{
+    int n = 0;
+
+    if (!udp)
+	return -1;
+
+    udp->base.wq = cd_wq_workqueue_default_create(udp->base.wq_workers_n, udp->base.wq_name);
+    if (!udp->base.wq) {
+	CD_LOG_ERR("Cannot create work queue");
+	return -1;
     }
 
-    return udp;
+    n = socket(AF_INET, SOCK_DGRAM, 0);
+    if (n < 0)
+	return -1;
+
+    udp->base.sockfd = n;
+
+    bzero(&udp->base.servaddr, sizeof(udp->base.servaddr));
+    udp->base.servaddr.sin_family = AF_INET;
+    udp->base.servaddr.sin_addr.s_addr = htonl(INADDR_ANY);
+    udp->base.servaddr.sin_port = htons(udp->base.port);
+
+    if (bind(udp->base.sockfd, (struct sockaddr *) &udp->base.servaddr, sizeof(udp->base.servaddr)) < 0) {
+	CD_LOG_ERR("Cannot bind to port %u", udp->base.port);
+	return -2;
+    }
+
+    return 0;
 }
 
 cd_msg_t* cd_endpoint_msg_create(char *buf, size_t len)
@@ -147,7 +185,14 @@ int cd_udp_endpoint_set_on_message_callback(cd_udp_endpoint_t *udp, cd_endpoint_
     return 0;
 }
 
-static int cd_udp_endpoint_do_loop(cd_udp_endpoint_t *udp)
+int cd_udp_endpoint_set_signal_handler(int signo, cd_endpoint_sig_handler_t sig_handler)
+{
+    if (signal(signo, sig_handler) == SIG_ERR)
+	return -1;
+    return 0;
+}
+
+int cd_udp_endpoint_loop(cd_udp_endpoint_t *udp)
 {
     socklen_t len = 0;
     char msg[CD_UDP_BUFLEN] = { 0 };
@@ -202,42 +247,16 @@ static int cd_udp_endpoint_do_loop(cd_udp_endpoint_t *udp)
     return 0;
 }
 
-int cd_udp_endpoint_loop(cd_udp_endpoint_t *udp)
+int cd_udp_endpoint_stop(cd_udp_endpoint_t *udp)
 {
-    int n = 0;
-
     if (!udp)
 	return -1;
 
-    udp->base.wq = cd_wq_workqueue_default_create(udp->base.wq_workers_n, udp->base.wq_name);
-    if (!udp->base.wq) {
-	CD_LOG_ERR("Cannot create work queue");
-	return -1;
+    if (udp->base.wq) {
+	if (CD_ERR_OK != cd_wq_workqueue_stop(udp->base.wq)) {
+	    return -1;
+	}
     }
 
-    n = socket(AF_INET, SOCK_DGRAM, 0);
-    if (n < 0)
-	return -1;
-
-    udp->base.sockfd = n;
-
-    bzero(&udp->base.servaddr, sizeof(udp->base.servaddr));
-    udp->base.servaddr.sin_family = AF_INET;
-    udp->base.servaddr.sin_addr.s_addr = htonl(INADDR_ANY);
-    udp->base.servaddr.sin_port = htons(udp->base.port);
-
-    if (bind(udp->base.sockfd, (struct sockaddr *) &udp->base.servaddr, sizeof(udp->base.servaddr)) < 0) {
-	CD_LOG_ERR("Cannot bind to port %u", udp->base.port);
-	return -2;
-    }
-
-    return cd_udp_endpoint_do_loop(udp);
-}
-
-void cd_udp_endpoint_destroy(cd_udp_endpoint_t** udp)
-{
-    if (!(*udp))
-	return;
-    free(*udp);
-    *udp = NULL;
+    return 0;
 }

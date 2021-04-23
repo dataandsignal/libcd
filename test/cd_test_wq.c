@@ -40,7 +40,7 @@ static void test_wq_create(void)
 	assert(wq->options.CD_WQ_QUEUE_OPTION_STOP == CD_WQ_QUEUE_OPTION_STOP_HARD);
 	assert(CD_ERR_OK == cd_wq_workqueue_stop(wq));
 
-	cd_wq_workqueue_free(wq);
+	cd_wq_workqueue_free(&wq);
 	printf("CREATE: OK\n");
 }
 
@@ -130,7 +130,7 @@ static void test_wq_queue_default(void)
 	printf("DEFAULT (SOFT): All jobs were executed\n");
 	pthread_mutex_unlock(&test_wq_queue_default_counter_mutex);
 	
-	cd_wq_workqueue_free(wq);
+	cd_wq_workqueue_free(&wq);
 
 	pthread_mutex_destroy(&test_wq_queue_default_counter_mutex);
 }
@@ -220,7 +220,7 @@ static void test_wq_queue_soft(void)
 	printf("SOFT: All jobs were executed\n");
 	pthread_mutex_unlock(&test_wq_queue_soft_counter_mutex);
 	
-	cd_wq_workqueue_free(wq);
+	cd_wq_workqueue_free(&wq);
 
 	pthread_mutex_destroy(&test_wq_queue_soft_counter_mutex);
 }
@@ -368,7 +368,7 @@ static void test_wq_queue_default_sync(void)
 	printf("DEFAULT SYNC: All dctors were called\n");
 	pthread_mutex_unlock(&test_wq_queue_default_sync_counter_mutex);
 	
-	cd_wq_workqueue_free(wq);
+	cd_wq_workqueue_free(&wq);
 
 	pthread_mutex_destroy(&test_wq_queue_default_sync_counter_mutex);
 }
@@ -509,7 +509,7 @@ static void test_wq_queue_hard_sync(void)
 	assert(CD_ERR_OK == cd_wq_workqueue_stop(wq));
 
 	// Will block till all threads are joined, CD_WORK_SYNC dctors are called and queue is empty.
-	cd_wq_workqueue_free(wq);
+	cd_wq_workqueue_free(&wq);
 
 	pthread_mutex_lock(&test_wq_queue_hard_sync_counter_mutex);
 	assert(test_wq_queue_hard_sync_dctor_counter == 9);
@@ -751,7 +751,7 @@ static void test_wq_queue_hard_sync_async(void)
 	assert(CD_ERR_OK == cd_wq_workqueue_stop(wq));
 
 	// Will block till all threads are joined, CD_WORK_SYNC dctors are called and queue is empty.
-	cd_wq_workqueue_free(wq);
+	cd_wq_workqueue_free(&wq);
 
 	pthread_mutex_lock(&test_wq_queue_hard_sync_async_counter_mutex);
 	assert(test_wq_queue_hard_sync_async_sync_dctor_counter == 11);

@@ -191,26 +191,33 @@ enum cd_error cd_wq_workqueue_deinit(struct cd_workqueue *wq)
 	return CD_ERR_OK;
 }
 
-enum cd_error cd_wq_workqueue_free(struct cd_workqueue *wq)
+enum cd_error cd_wq_workqueue_free(struct cd_workqueue **wq)
 {
 	enum cd_error err = CD_ERR_OK;
 
-	err = cd_wq_workqueue_deinit(wq);
+	if (!wq || !(*wq))
+		return CD_ERR_OK;
+
+	err = cd_wq_workqueue_deinit(*wq);
 	if (err != CD_ERR_OK)
 		return err;
 
-	free(wq);
+	free(*wq);
+	*wq = NULL;
+
 	return CD_ERR_OK;
 }
 
 struct cd_workqueue* cd_wq_workqueue_create(uint32_t workers_n, const char *name, uint8_t option_stop)
 {
 	enum cd_error   err = CD_ERR_OK;
-	struct cd_workqueue* wq;
+	struct cd_workqueue *wq;
 	wq = malloc(sizeof(struct cd_workqueue));
 	if (wq == NULL) {
 		return NULL;
 	}
+	memset(wq, 0, sizeof(struct cd_workqueue));
+
 	err = cd_wq_workqueue_init(wq, workers_n, name, option_stop);
 	if (err  != CD_ERR_OK) {
 		switch (err) {
@@ -220,7 +227,7 @@ struct cd_workqueue* cd_wq_workqueue_create(uint32_t workers_n, const char *name
 				return NULL;
 
 			case CD_ERR_WORKQUEUE_CREATE:
-				cd_wq_workqueue_free(wq);
+				cd_wq_workqueue_free(&wq);
 				return NULL;
 
 			default:

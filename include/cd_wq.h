@@ -64,7 +64,7 @@ enum cd_error cd_wq_workqueue_init(struct cd_workqueue *q, uint32_t workers_n, c
 enum cd_error cd_wq_workqueue_default_init(struct cd_workqueue *wq, uint32_t workers_n, const char *name);
 enum cd_error cd_wq_workqueue_deinit(struct cd_workqueue *wq);
 
-enum cd_error cd_wq_workqueue_free(struct cd_workqueue *wq);
+enum cd_error cd_wq_workqueue_free(struct cd_workqueue **wq);
 struct cd_workqueue* cd_wq_workqueue_create(uint32_t workers_n, const char *name, uint8_t option_stop);
 struct cd_workqueue* cd_wq_workqueue_default_create(uint32_t workers_n, const char *name);
 enum cd_error cd_wq_workqueue_stop(struct cd_workqueue *wq);

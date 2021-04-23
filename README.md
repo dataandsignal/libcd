@@ -39,6 +39,22 @@ static void* on_udp_msg(void *msg)
     return NULL;
 }
 
+static void sigint_handler(int signo)
+{
+    printf("Signal %d (%s) received\n", signo, strsignal(signo));
+
+    if (SIGINT == signo) {
+
+	printf("Do widzenia!\n");
+
+	cd_udp_endpoint_stop(udp);
+	cd_udp_endpoint_destroy(&udp);
+	exit(EXIT_SUCCESS);
+    } else {
+	printf ("Ignored\n");
+    }
+}
+
 int main(void)
 {
     cd_udp_endpoint_t *udp = NULL;
@@ -62,10 +78,17 @@ int main(void)
     cd_udp_endpoint_set_workqueue_name(udp, "UDP workqueue");
     cd_udp_endpoint_set_workqueue_threads_n(udp, 4);
     cd_udp_endpoint_set_on_message_callback(udp, on_udp_msg);
+    cd_udp_endpoint_set_signal_handler(SIGINT, sigint_handler);
 
+    if (cd_udp_endpoint_init(udp) != 0) {
+	// Maybe could not bind or create a socket
+	cd_udp_endpoint_destroy(&udp);
+	return -1;
+    }
+
+    // This will block and process messages (send SIGINT to stop the endpoint and exit)
     cd_udp_endpoint_loop(udp);
 
-    cd_udp_endpoint_destroy(&udp);
     return 0;
 }
 ```

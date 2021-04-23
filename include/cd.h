@@ -79,6 +79,7 @@ typedef enum cd_endpoint_type {
 struct cd_endpoint_s;
 struct cd_msg_s;
 typedef void* (*cd_endpoint_on_msg_cb)(void *);
+typedef void (*cd_endpoint_sig_handler_t)(int signo);
 
 typedef struct cd_endpoint_s {
 	cd_endpoint_type_t		type;
@@ -118,6 +119,12 @@ typedef struct cd_tcp_endpoint_s {
 cd_udp_endpoint_t* cd_udp_endpoint_create(void);
 cd_tcp_endpoint_t* cd_tcp_endpoint_create(void);
 
+void cd_udp_endpoint_destroy(cd_udp_endpoint_t** udp);
+void cd_tcp_endpoint_destroy(cd_tcp_endpoint_t** tcp);
+
+int cd_udp_endpoint_init(cd_udp_endpoint_t *udp);
+int cd_tcp_endpoint_init(cd_tcp_endpoint_t *tcp);
+
 int cd_udp_endpoint_set_port(cd_udp_endpoint_t *udp, uint16_t port);
 int cd_tcp_endpoint_set_port(cd_tcp_endpoint_t *tcp, uint16_t port);
 
@@ -130,11 +137,14 @@ int cd_tcp_endpoint_set_workqueue_threads_n(cd_tcp_endpoint_t *tcp, uint32_t wor
 int cd_udp_endpoint_set_on_message_callback(cd_udp_endpoint_t *udp, cd_endpoint_on_msg_cb cb);
 int cd_tcp_endpoint_set_on_message_callback(cd_tcp_endpoint_t *tcp, cd_endpoint_on_msg_cb cb);
 
+int cd_udp_endpoint_set_signal_handler(int signo, cd_endpoint_sig_handler_t sig_handler);
+int cd_tcp_endpoint_set_signal_handler(int signo, cd_endpoint_sig_handler_t sig_handler);
+
 int cd_udp_endpoint_loop(cd_udp_endpoint_t *udp);
 int cd_tcp_endpoint_loop(cd_tcp_endpoint_t *tcp);
 
-void cd_udp_endpoint_destroy(cd_udp_endpoint_t** udp);
-void cd_tcp_endpoint_destroy(cd_tcp_endpoint_t** tcp);
+int cd_udp_endpoint_stop(cd_udp_endpoint_t *udp);
+int cd_tcp_endpoint_stop(cd_tcp_endpoint_t *tcp);
 
 #define CD_UDP_BUFLEN 2000
 

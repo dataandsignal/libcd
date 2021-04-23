@@ -12,6 +12,8 @@
 #include "../include/cd.h"
 
 
+cd_udp_endpoint_t *udp = NULL;
+
 static void* on_udp_msg(void *msg)
 {
     cd_msg_t *m = msg;
@@ -25,10 +27,24 @@ static void* on_udp_msg(void *msg)
     return NULL;
 }
 
+static void sigint_handler(int signo)
+{
+    printf("Signal %d (%s) received\n", signo, strsignal(signo));
+
+    if (SIGINT == signo) {
+
+	printf("Do widzenia!\n");
+
+	cd_udp_endpoint_stop(udp);
+	cd_udp_endpoint_destroy(&udp);
+	exit(EXIT_SUCCESS);
+    } else {
+	printf ("Ignored\n");
+    }
+}
+
 int main(void)
 {
-    cd_udp_endpoint_t *udp = NULL;
-
     /**
      * By default all log from libcd goes into stderr, so you can redirect it wherever you want.
      * If however all log output from lib should be redirected to some file then use this
@@ -48,9 +64,16 @@ int main(void)
     cd_udp_endpoint_set_workqueue_name(udp, "UDP workqueue");
     cd_udp_endpoint_set_workqueue_threads_n(udp, 4);
     cd_udp_endpoint_set_on_message_callback(udp, on_udp_msg);
+    cd_udp_endpoint_set_signal_handler(SIGINT, sigint_handler);
 
+    if (cd_udp_endpoint_init(udp) != 0) {
+	// Maybe could not bind or create a socket
+	cd_udp_endpoint_destroy(&udp);
+	return -1;
+    }
+
+    // This will block and process messages (send SIGINT to stop the endpoint and exit)
     cd_udp_endpoint_loop(udp);
 
-    cd_udp_endpoint_destroy(&udp);
     return 0;
 }
