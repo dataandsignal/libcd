@@ -1,14 +1,14 @@
 CC			= gcc
 CFLAGS			= -c -fPIC -Wall -Wextra -Wfatal-errors -Wno-unused-function
 LDFLAGS      = -shared
-SRCDIR 			= .
+SRCDIR 			= src
 DEBUGOUTPUTDIR 		= build/debug
 RELEASEOUTPUTDIR	= build/release
 SOURCES			= src/cd_wq.c src/cd_log.c src/cd_endpoint.c
 INCLUDES		= -I./src -Iinclude
 _OBJECTS		= $(SOURCES:.c=.o)
-DEBUGOBJECTS 		= $(patsubst %,$(DEBUGOUTPUTDIR)/%,$(_OBJECTS))
-RELEASEOBJECTS 		= $(patsubst %,$(RELEASEOUTPUTDIR)/%,$(_OBJECTS))
+DEBUGOBJECTS 		= $(patsubst src/%,$(DEBUGOUTPUTDIR)/%,$(_OBJECTS))
+RELEASEOBJECTS 		= $(patsubst src/%,$(RELEASEOUTPUTDIR)/%,$(_OBJECTS))
 DEBUGTARGET		= build/debug/libcd.so
 RELEASETARGET	= build/release/libcd.so
 
@@ -18,8 +18,11 @@ debugprereqs:
 releaseprereqs:
 		mkdir -p $(RELEASEOUTPUTDIR)
 
-debugall:	debugprereqs $(SOURCES) $(DEBUGTARGET)
-releaseall:	releaseprereqs $(SOURCES) $(RELEASETARGET)
+install-prereqs:
+		mkdir -p /usr/local/include/cd
+
+debugall:	debugprereqs $(DEBUGOBJECTS) $(DEBUGTARGET)
+releaseall:	releaseprereqs $(RELEASETARGET)
 
 # additional flags
 # CONFIG_DEBUG_LIST	- extensive debugging of list with external debugging
@@ -71,10 +74,13 @@ all: release
 
 .DEFAULT_GOAL = release
 
-install-debug: $(DEBUGTARGET)
+install-headers: install-prereqs include/cd.h
+	cp include/* /usr/local/include/cd/
+
+install-debug: $(DEBUGTARGET) install-headers
 	cp $(DEBUGTARGET) /usr/local/lib/
 
-install-release: $(RELEASETARGET)
+install-release: $(RELEASETARGET) install-headers
 	cp $(RELEASETARGET) /usr/local/lib/
 
 install: install-release
