@@ -1,9 +1,10 @@
-libcd
+# libcd
 
 Support for C programs with queue processors, from Data And Signal's Piotr Gregor.
 
 
-Basic Example
+## Basic Example
+
 ```
 void* user_callback(void *m)
 {
@@ -18,10 +19,11 @@ cd_wq_queue_work(wq, work);
 cd_wq_workqueue_stop(wq);
 ```
 
-UDP endpoint
+## UDP endpoint
 
 UDP endpoint is implemented with libcd's work queue. It will open UDP port, create work queue, and start as many workers as configured, distributing work evenly.
 User callback gets called for each UDP packet.
+
 ```
 #include "../include/cd.h"
 
@@ -93,9 +95,10 @@ int main(void)
 }
 ```
 
-BUILD
+## BUILD
 
 This builds on Linux Debian. make, make debug and make release produce shared library in build/debug or build/release folders.
+
 ```
 make debug			-> for debug library build
 make release			-> for release library build
@@ -113,9 +116,9 @@ make test-clean			-> remove test binaries
 make examples-clean		-> remove examples binaries
 make clean-all			-> remove library and test and examples binaries
 
-make install-debug		-> install debug version of library to /usr/local/lib
-make install-release		-> install release version of library to /usr/local/lib
+make install-debug		-> install debug version of library to /lib
+make install-release		-> install release version of library to /lib
 make install			-> same as make install-release
 
-make uninstall			-> remove library from /usr/local/lib
+make uninstall			-> remove library from /lib
 ```

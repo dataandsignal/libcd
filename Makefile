@@ -78,15 +78,15 @@ install-headers: install-prereqs include/cd.h
 	cp include/* /usr/local/include/cd/
 
 install-debug: $(DEBUGTARGET) install-headers
-	cp $(DEBUGTARGET) /usr/local/lib/
+	cp $(DEBUGTARGET) /lib/
 
 install-release: $(RELEASETARGET) install-headers
-	cp $(RELEASETARGET) /usr/local/lib/
+	cp $(RELEASETARGET) /lib/
 
 install: install-release
 
 uninstall:
-	rm /usr/local/lib/libcd.so
+	rm /lib/libcd.so
 
 clean:
 	rm -rf $(DEBUGOBJECTS) $(DEBUGTARGET) $(RELEASEOBJECTS) $(RELEASETARGET)
