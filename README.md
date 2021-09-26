@@ -35,7 +35,7 @@ cd_wq_workqueue_stop(wq);
 	wq = cd_wq_workqueue_default_create(workers_n, name);
 	```
 
-- Support for automatic calling (or no calling) of destructors for processed jobs. If job is created with SYNC option, user's destructor will get called on user's data once processing of the work wrapping this data has finished. If work is ASYNC, destructor will not be called (user must call it). To configure this option choose appropriate setting when creating work:
+- Support for automatic calling (or no calling) of destructors for processed jobs (think of callbacks on user data here, rather than memory release, since it is up to you how you handle your data. This may be free() or your cleanup function, but can be simply a counter or other logging util). If job is created with SYNC option, user's destructor (or a callback rather) will get called on user's data once processing of the work wrapping this data has finished, or when queue is terminated. If work is ASYNC, destructor will not be called (user handles user data cleanup, if any). To configure this option choose appropriate setting when creating work:
 
 	SYNC:
 	```
@@ -53,7 +53,9 @@ cd_wq_workqueue_stop(wq);
 				user_ref, 
 				user_function, 
 				NULL);
-	```
+	``` 
+
+	For SYNC jobs, it is guaranteed that there will be a single call to user's dectructor (once the job is done or terminated).	
 
 ## UDP endpoint
 

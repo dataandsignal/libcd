@@ -84,15 +84,15 @@ static void test_wq_queue_default(void)
 	assert(wq->next_worker_idx_to_use == wq->first_active_worker_idx);
 	assert(wq->options.CD_WQ_QUEUE_OPTION_STOP == CD_WQ_QUEUE_OPTION_STOP_SOFT);
 
-	w1 = cd_wq_work_create(CD_WORK_SYNC, (void *) &test_wq_queue_default_counter, 555, test_wq_queue_default_f, NULL);
-	w2 = cd_wq_work_create(CD_WORK_SYNC, (void *) &test_wq_queue_default_counter, 556, test_wq_queue_default_f, NULL);
-	w3 = cd_wq_work_create(CD_WORK_SYNC, (void *) &test_wq_queue_default_counter, 557, test_wq_queue_default_f, NULL);
-	w4 = cd_wq_work_create(CD_WORK_SYNC, (void *) &test_wq_queue_default_counter, 558, test_wq_queue_default_f, NULL);
-	w5 = cd_wq_work_create(CD_WORK_SYNC, (void *) &test_wq_queue_default_counter, 559, test_wq_queue_default_f, NULL);
-	w6 = cd_wq_work_create(CD_WORK_SYNC, (void *) &test_wq_queue_default_counter, 560, test_wq_queue_default_f, NULL);
-	w7 = cd_wq_work_create(CD_WORK_SYNC, (void *) &test_wq_queue_default_counter, 561, test_wq_queue_default_f, NULL);
-	w8 = cd_wq_work_create(CD_WORK_SYNC, (void *) &test_wq_queue_default_counter, 562, test_wq_queue_default_f, NULL);
-	w9 = cd_wq_work_create(CD_WORK_SYNC, (void *) &test_wq_queue_default_counter, 563, test_wq_queue_default_f, NULL);
+	w1 = cd_wq_work_create(CD_WORK_ASYNC, (void *) &test_wq_queue_default_counter, 555, test_wq_queue_default_f, NULL);
+	w2 = cd_wq_work_create(CD_WORK_ASYNC, (void *) &test_wq_queue_default_counter, 556, test_wq_queue_default_f, NULL);
+	w3 = cd_wq_work_create(CD_WORK_ASYNC, (void *) &test_wq_queue_default_counter, 557, test_wq_queue_default_f, NULL);
+	w4 = cd_wq_work_create(CD_WORK_ASYNC, (void *) &test_wq_queue_default_counter, 558, test_wq_queue_default_f, NULL);
+	w5 = cd_wq_work_create(CD_WORK_ASYNC, (void *) &test_wq_queue_default_counter, 559, test_wq_queue_default_f, NULL);
+	w6 = cd_wq_work_create(CD_WORK_ASYNC, (void *) &test_wq_queue_default_counter, 560, test_wq_queue_default_f, NULL);
+	w7 = cd_wq_work_create(CD_WORK_ASYNC, (void *) &test_wq_queue_default_counter, 561, test_wq_queue_default_f, NULL);
+	w8 = cd_wq_work_create(CD_WORK_ASYNC, (void *) &test_wq_queue_default_counter, 562, test_wq_queue_default_f, NULL);
+	w9 = cd_wq_work_create(CD_WORK_ASYNC, (void *) &test_wq_queue_default_counter, 563, test_wq_queue_default_f, NULL);
 
 	printf("TEST WQ DEFAULT (SOFT)\n");
 
@@ -176,15 +176,15 @@ static void test_wq_queue_soft(void)
 	assert(wq->next_worker_idx_to_use == wq->first_active_worker_idx);
 	assert(wq->options.CD_WQ_QUEUE_OPTION_STOP == CD_WQ_QUEUE_OPTION_STOP_SOFT);
 
-	w1 = cd_wq_work_create(CD_WORK_SYNC, (void *) &test_wq_queue_soft_counter, 555, test_wq_queue_soft_f, NULL);
-	w2 = cd_wq_work_create(CD_WORK_SYNC, (void *) &test_wq_queue_soft_counter, 556, test_wq_queue_soft_f, NULL);
-	w3 = cd_wq_work_create(CD_WORK_SYNC, (void *) &test_wq_queue_soft_counter, 557, test_wq_queue_soft_f, NULL);
-	w4 = cd_wq_work_create(CD_WORK_SYNC, (void *) &test_wq_queue_soft_counter, 558, test_wq_queue_soft_f, NULL);
-	w5 = cd_wq_work_create(CD_WORK_SYNC, (void *) &test_wq_queue_soft_counter, 559, test_wq_queue_soft_f, NULL);
-	w6 = cd_wq_work_create(CD_WORK_SYNC, (void *) &test_wq_queue_soft_counter, 560, test_wq_queue_soft_f, NULL);
-	w7 = cd_wq_work_create(CD_WORK_SYNC, (void *) &test_wq_queue_soft_counter, 561, test_wq_queue_soft_f, NULL);
-	w8 = cd_wq_work_create(CD_WORK_SYNC, (void *) &test_wq_queue_soft_counter, 562, test_wq_queue_soft_f, NULL);
-	w9 = cd_wq_work_create(CD_WORK_SYNC, (void *) &test_wq_queue_soft_counter, 563, test_wq_queue_soft_f, NULL);
+	w1 = cd_wq_work_create(CD_WORK_ASYNC, (void *) &test_wq_queue_soft_counter, 555, test_wq_queue_soft_f, NULL);
+	w2 = cd_wq_work_create(CD_WORK_ASYNC, (void *) &test_wq_queue_soft_counter, 556, test_wq_queue_soft_f, NULL);
+	w3 = cd_wq_work_create(CD_WORK_ASYNC, (void *) &test_wq_queue_soft_counter, 557, test_wq_queue_soft_f, NULL);
+	w4 = cd_wq_work_create(CD_WORK_ASYNC, (void *) &test_wq_queue_soft_counter, 558, test_wq_queue_soft_f, NULL);
+	w5 = cd_wq_work_create(CD_WORK_ASYNC, (void *) &test_wq_queue_soft_counter, 559, test_wq_queue_soft_f, NULL);
+	w6 = cd_wq_work_create(CD_WORK_ASYNC, (void *) &test_wq_queue_soft_counter, 560, test_wq_queue_soft_f, NULL);
+	w7 = cd_wq_work_create(CD_WORK_ASYNC, (void *) &test_wq_queue_soft_counter, 561, test_wq_queue_soft_f, NULL);
+	w8 = cd_wq_work_create(CD_WORK_ASYNC, (void *) &test_wq_queue_soft_counter, 562, test_wq_queue_soft_f, NULL);
+	w9 = cd_wq_work_create(CD_WORK_ASYNC, (void *) &test_wq_queue_soft_counter, 563, test_wq_queue_soft_f, NULL);
 
 	printf("TEST WQ STOP SOFT\n");
 

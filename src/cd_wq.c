@@ -19,6 +19,7 @@ static void cd_wq_call_dctor(struct cd_work *work, enum cd_work_sync_async_type 
 		if (work->f_dtor) {
 			work->f_dtor(work->user_data);
 			work->f_dtor = NULL;
+			work->user_data = NULL;
 		}
 	}
 }
@@ -49,8 +50,7 @@ static void* cd_wq_worker_f(void *arg)
 			// Execute sync destructors.
 			cd_wq_call_dctor(work, CD_WORK_SYNC);
 
-			free(work);
-			work = NULL;
+			cd_wq_work_free(&work);
 
 			pthread_mutex_lock(&w->mutex);
 		}
@@ -115,8 +115,7 @@ static enum cd_error cd_wq_worker_deinit(struct cd_worker *w)
 		// This will call user's destructor for the task which has not been processed.
 		cd_wq_call_dctor(work, CD_WORK_SYNC);
 
-		free(work);
-		work = NULL;
+		cd_wq_work_free(&work);
 	}
 
 	assert(cd_list_empty(&w->queue));
@@ -290,14 +289,27 @@ struct cd_work* cd_wq_work_create(enum cd_work_sync_async_type type, void *user_
 	return cd_wq_work_init(work, type, user_data, user_data_type, f, f_dtor);
 }
 
-void cd_wq_work_free(struct cd_work* work)
+void cd_wq_work_free(struct cd_work **work)
 {
-	if (work->user_data != NULL) {
-		free(work->user_data);
-		work->user_data = NULL;
+	if (!work || !*work) {
+		return;
 	}
 
-	free(work);
+	if ((*work)->type == CD_WORK_SYNC) {
+		if ((*work)->user_data != NULL) {
+			if ((*work)->f_dtor) {
+				CD_LOG_CRIT("Unexpected user data left in SYNC work (destructor should have been already called), calling user's destructor...");
+				(*work)->f_dtor((*work)->user_data);
+				(*work)->f_dtor = NULL;
+				(*work)->user_data = NULL;
+			} else {
+				CD_LOG_ERR("User data left in SYNC work, freeing work without a call to user's destructor, leaving user's data intact...");
+			}
+		}
+	}
+
+	free(*work);
+	*work = NULL;
 }
 
 enum cd_error cd_wq_queue_work(struct cd_workqueue *wq, struct cd_work* work)
@@ -305,7 +317,7 @@ enum cd_error cd_wq_queue_work(struct cd_workqueue *wq, struct cd_work* work)
 	struct cd_worker    *w = NULL;
 	uint8_t             idx = wq->next_worker_idx_to_use, sanity = 0xFF;
 
-	if (!wq || !w) {
+	if (!wq || !work) {
 		return CD_ERR_BAD_CALL;
 	}
 

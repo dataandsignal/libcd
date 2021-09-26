@@ -56,6 +56,7 @@ struct cd_workqueue {
 	uint8_t             first_active_worker_idx;
 	uint8_t             next_worker_idx_to_use; /* index of next worker to use for enquing the work in round-robin fashion */
 };
+typedef struct cd_workqueue cd_workqueue_t;
 
 /* @brief   Start the worker threads.
  * @details After this returns the @workers_n variable in workqueue is set to the numbers of successfully created
@@ -79,6 +80,7 @@ struct cd_work {
 	void* (*f)(void*);                      /* processing */
 	void (*f_dtor)(void*);                  /* destructor */
 };
+typedef struct cd_work cd_work_t;
 
 #define CD_WORK_INITIALIZER(n, t, ud, udt, f, f_dtor) {      \
 	.link  = { &(n).link, &(n).link },      \
@@ -94,7 +96,7 @@ struct cd_work {
 
 struct cd_work* cd_wq_work_init(struct cd_work* work, enum cd_work_sync_async_type type, void *user_data, int user_data_type, void*(*f)(void*), void(*f_dtor)(void*));
 struct cd_work* cd_wq_work_create(enum cd_work_sync_async_type type, void *user_data, int user_data_type, void*(*f)(void*), void(*f_dtor)(void*));
-void cd_wq_work_free(struct cd_work* work);
+void cd_wq_work_free(struct cd_work **work);
 enum cd_error cd_wq_queue_work(struct cd_workqueue *wq, struct cd_work* work);
 void cd_wq_queue_delayed_work(struct cd_workqueue *wq, struct cd_work* work, unsigned int delay);
 enum cd_error cd_wq_queue_user(struct cd_workqueue *wq, enum cd_work_sync_async_type type, void *user_data, int user_data_type, void*(*f)(void*), void(*f_dtor)(void*));
