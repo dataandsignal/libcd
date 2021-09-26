@@ -305,6 +305,10 @@ enum cd_error cd_wq_queue_work(struct cd_workqueue *wq, struct cd_work* work)
 	struct cd_worker    *w = NULL;
 	uint8_t             idx = wq->next_worker_idx_to_use, sanity = 0xFF;
 
+	if (!wq || !w) {
+		return CD_ERR_BAD_CALL;
+	}
+
 	if (wq->workers_active_n == 0) {
 		CD_LOG_CRIT("NO ACTIVE WORKER THREAD in the workqueue [%s]", wq->name);
 		return CD_ERR_WORKQUEUE_ACTIVE;

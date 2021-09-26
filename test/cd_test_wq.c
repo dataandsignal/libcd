@@ -429,7 +429,7 @@ static void test_wq_queue_hard_sync(void)
 	struct test_wq_queue_hard_sync_user_data *user_data_8 = malloc(sizeof(struct test_wq_queue_hard_sync_user_data));
 	struct test_wq_queue_hard_sync_user_data *user_data_9 = malloc(sizeof(struct test_wq_queue_hard_sync_user_data));
 
-	printf("TEST WQ STOP HARD SYNC\n");
+	printf("TEST WQ STOP HARD SYNC (9 SYNC jobs)\n");
 
 	assert(user_data_1 != NULL);
 	assert(user_data_2 != NULL);
@@ -515,7 +515,7 @@ static void test_wq_queue_hard_sync(void)
 	assert(test_wq_queue_hard_sync_dctor_counter == 9);
 	printf("HARD SYNC: All dctors were called\n");
 	assert(test_wq_queue_hard_sync_counter <= 9);
-	printf("HARD SYNC: %u jobs were executed, %u jobs were skipped\n", test_wq_queue_hard_sync_counter, 20 - test_wq_queue_hard_sync_counter);
+	printf("HARD SYNC: %u jobs were executed, %u jobs were skipped\n", test_wq_queue_hard_sync_counter, 9 - test_wq_queue_hard_sync_counter);
 	pthread_mutex_unlock(&test_wq_queue_hard_sync_counter_mutex);
 
 	pthread_mutex_destroy(&test_wq_queue_hard_sync_counter_mutex);
@@ -604,7 +604,7 @@ static void test_wq_queue_hard_sync_async(void)
 	struct test_wq_queue_hard_sync_async_user_data *user_data_19 = malloc(sizeof(struct test_wq_queue_hard_sync_async_user_data));
 	struct test_wq_queue_hard_sync_async_user_data *user_data_20 = malloc(sizeof(struct test_wq_queue_hard_sync_async_user_data));
 
-	printf("TEST WQ STOP HARD SYNC/ASYNC\n");
+	printf("TEST WQ STOP HARD SYNC/ASYNC (20 jobs: 11 sync, 9 async)\n");
 
 	assert(user_data_1 != NULL);
 	assert(user_data_2 != NULL);

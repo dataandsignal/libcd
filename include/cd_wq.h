@@ -18,8 +18,8 @@
 
 
 enum cd_work_sync_async_type {
-	CD_WORK_SYNC,               /* destructor will be called by worker syncronously after processing callback returned */
-	CD_WORK_ASYNC               /* worker thread is not responsible for the calling of destructor of this work type - call to destructor must be configured by work's processing callback  */
+	CD_WORK_SYNC,               /* user's destructor will be called by worker syncronously after processing callback returned */
+	CD_WORK_ASYNC               /* worker thread is not responsible for the calling of user's destructor - call to user's destructor must be handled by work's processing callback  */
 };
 
 struct cd_wq_queue_options {

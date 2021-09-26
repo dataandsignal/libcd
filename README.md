@@ -19,6 +19,42 @@ cd_wq_queue_work(wq, work);
 cd_wq_workqueue_stop(wq);
 ```
 
+## Features
+
+- Two types of queues are available: blocking and nonblocking. They differ in how they react to stop request. Blocking queue will wait for all the already enqueued jobs to be processed, before terminating processing of the queue, nonblocking queue will stop processing immediately, leaving any unprocessed jobs behind. Blocking is default. To configure this behaviour choose appropriate queue stop option:
+
+	Nonblocking:
+	```
+	wq = cd_wq_workqueue_create(workers_n, name, CD_WQ_QUEUE_OPTION_STOP_HARD);
+	```
+
+	Blocking (default):
+	```
+	wq = cd_wq_workqueue_create(workers_n, name, CD_WQ_QUEUE_OPTION_STOP_SOFT);
+	// or
+	wq = cd_wq_workqueue_default_create(workers_n, name);
+	```
+
+- Support for automatic calling (or no calling) of destructors for processed jobs. If job is created with SYNC option, user's destructor will get called on user's data once processing of the work wrapping this data has finished. If work is ASYNC, destructor will not be called (user must call it). To configure this option choose appropriate setting when creating work:
+
+	SYNC:
+	```
+	w = cd_wq_work_create(CD_WORK_SYNC, 
+				(void *) user_data, 
+				user_ref,
+				user_function,
+				user_destructor);
+	```
+
+	ASYNC:
+	```
+	w = cd_wq_work_create(CD_WORK_ASYNC, 
+				(void *) user_data, 
+				user_ref, 
+				user_function, 
+				NULL);
+	```
+
 ## UDP endpoint
 
 UDP endpoint is implemented with libcd's work queue. It will open UDP port, create work queue, and start as many workers as configured, distributing work evenly.
