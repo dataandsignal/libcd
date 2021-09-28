@@ -13,7 +13,7 @@ void* user_callback(void *m)
 }
 
 wq = cd_wq_workqueue_default_create(workers_n, name);
-work = cd_wq_work_create(CD_WORK_SYNC, (void *) &user_data, user_ref, user_callback, NULL);	
+work = cd_wq_work_create(CD_WORK_ASYNC, (void *) &user_data, user_ref, user_callback, NULL);	
 cd_wq_queue_work(wq, work);
 (...)
 cd_wq_workqueue_stop(wq);
