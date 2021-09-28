@@ -44,10 +44,10 @@ test:		test-release
 test-clean:
 		cd test && make clean
 
-examples-debug:		debugall
+examples-debug:		debugall install-debug
 		cd examples && make examples-debug
 
-examples-release:		releaseall
+examples-release:		releaseall install-release
 		cd examples && make examples-release
 
 examples:		examples-release

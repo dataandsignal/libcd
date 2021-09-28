@@ -6,18 +6,38 @@ Support for C programs with queue processors, from Data And Signal's Piotr Grego
 ## Basic Example
 
 ```
-void* user_callback(void *m)
+#include <cd.h>
+
+
+const char *mario = "Mario";
+
+
+static void* my_function(void *arg)
 {
-    // m points to user_data 
-    printf("I got some work to do with my data");
+	printf("I am %s\n", (char *) arg);
+	return NULL;
 }
 
-wq = cd_wq_workqueue_default_create(workers_n, name);
-work = cd_wq_work_create(CD_WORK_ASYNC, (void *) &user_data, user_ref, user_callback, NULL);	
-cd_wq_queue_work(wq, work);
-(...)
-cd_wq_workqueue_stop(wq);
+int main(void)
+{
+	const char *queue_name = "My workqueue";
+	uint32_t workers_n = 2;
+	struct cd_workqueue *wq = NULL;
+	struct cd_work *work = NULL;
+
+
+	wq = cd_wq_workqueue_default_create(workers_n, queue_name);
+	work = cd_wq_work_create(CD_WORK_ASYNC, (void *) mario, 0, my_function, NULL);
+	cd_wq_queue_work(wq, work);
+
+	cd_wq_workqueue_stop(wq);
+	cd_wq_workqueue_free(&wq);
+
+	return 0;
+}
 ```
+
+For more examples see /examples folder and /test folder.
 
 ## Features
 
