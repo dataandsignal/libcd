@@ -3,7 +3,32 @@
 Support for C programs with queue processors, from Data And Signal's Piotr Gregor.
 
 
+## Quick setup
+
+```
+git clone https://github.com/dataandsignal/libcd.git
+cd libcd
+make
+make examples
+make test
+```
+
+Tested on Debian 10 (buster):
+
+```
+image: debian-10.10.0-amd64-netinst.iso
+kernel: Linux buster 4.19.0-17-amd64 #1 SMP Debian 4.19.194-3 (2021-07-18) x86_64 GNU/Linux
+platform: VirtualBox
+```
+
+
 ## Basic Example
+
+In this example workqueue is created with cd_wq_workqueue_default_create(). This gives you a default queue, which is blocking, thus waiting for all the enqueued jobs to get processed before stopping (see how cd_wq_workqueue_stop() gets called straight after cd_wq_queue_work() and this works as expected - job gets processed).
+
+The job (struct cd_work) gets created by a call to cd_wq_work_create() with CD_WORK_ASYNC type, which tells workqueue that user's data (here a "Mario" string) doesn't need any special handling after job got processed (note also NULL as last argument to cd_wq_work_create(), otherwise you could pass your callback there).
+
+Finally, let's note that workqueue will care about releasing memory allocated for work if you enqueued the work with cd_wq_queue_work(), thus you do not release this memory if you called cd_wq_queue_work(), otherwise you have to do it. 
 
 ```
 #include <cd.h>
@@ -38,6 +63,7 @@ int main(void)
 ```
 
 For more examples see /examples folder and /test folder.
+
 
 ## Features
 
@@ -174,9 +200,18 @@ make test-clean			-> remove test binaries
 make examples-clean		-> remove examples binaries
 make clean-all			-> remove library and test and examples binaries
 
+make install-headers		-> create /usr/local/include/cd folder and install lib headers to it
 make install-debug		-> install debug version of library to /lib
 make install-release		-> install release version of library to /lib
 make install			-> same as make install-release
 
-make uninstall			-> remove library from /lib
+make uninstall			-> remove library from /lib and headers from /usr/local/include/cd
 ```
+
+## Contribute
+
+Please submit any issues [here](https://github.com/dataandsignal/libcd/issues).
+
+All contributions are welcome, please submit PRs [here](https://github.com/dataandsignal/libcd/pulls).
+
+Enjoy!
