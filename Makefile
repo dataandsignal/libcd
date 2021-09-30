@@ -75,18 +75,19 @@ all: release
 .DEFAULT_GOAL = release
 
 install-headers: install-prereqs include/cd.h
-	cp include/* /usr/local/include/cd/
+	sudo cp include/* /usr/local/include/cd/
 
 install-debug: $(DEBUGTARGET) install-headers
-	cp $(DEBUGTARGET) /lib/
+	sudo cp $(DEBUGTARGET) /lib/
 
 install-release: $(RELEASETARGET) install-headers
-	cp $(RELEASETARGET) /lib/
+	sudo cp $(RELEASETARGET) /lib/
 
 install: install-release
 
 uninstall:
-	rm /lib/libcd.so
+	sudo rm /lib/libcd.so
+	sudo rm -rf /usr/local/include/cd
 
 clean:
 	rm -rf $(DEBUGOBJECTS) $(DEBUGTARGET) $(RELEASEOBJECTS) $(RELEASETARGET)
