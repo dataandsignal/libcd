@@ -19,7 +19,7 @@ releaseprereqs:
 		mkdir -p $(RELEASEOUTPUTDIR)
 
 install-prereqs:
-		mkdir -p /usr/local/include/cd
+		sudo mkdir -p /usr/local/include/cd
 
 debugall:	debugprereqs $(DEBUGOBJECTS) $(DEBUGTARGET)
 releaseall:	releaseprereqs $(RELEASETARGET)
