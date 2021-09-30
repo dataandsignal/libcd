@@ -34,7 +34,6 @@
 #include <stdint.h>
 #include <ctype.h>              /* isprint */
 #include <libgen.h>             /* dirname */
-#include <uuid/uuid.h>
 #include <sys/time.h>
 #include <stdarg.h>
 #include <stddef.h>
