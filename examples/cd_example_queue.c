@@ -1,7 +1,7 @@
 /**
  * cd_example_queue.c - Queue example
  *
- * Part of the libcd - bringing you support for C programs with queue processors, from Data And Signal's Piotr Gregor
+ * Part of the libcd - Libcd implements queue and queue processing with multiple worker threads, from Data And Signal's Piotr Gregor.
  * 
  * Data And Signal - IT Solutions
  * http://www.dataandsignal.com

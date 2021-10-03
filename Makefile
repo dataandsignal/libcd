@@ -4,7 +4,7 @@ LDFLAGS      = -shared
 SRCDIR 			= src
 DEBUGOUTPUTDIR 		= build/debug
 RELEASEOUTPUTDIR	= build/release
-SOURCES			= src/cd_wq.c src/cd_log.c src/cd_endpoint.c
+SOURCES			= src/cd_wq.c src/cd_log.c
 INCLUDES		= -I./src -Iinclude
 _OBJECTS		= $(SOURCES:.c=.o)
 DEBUGOBJECTS 		= $(patsubst src/%,$(DEBUGOUTPUTDIR)/%,$(_OBJECTS))

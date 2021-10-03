@@ -1,6 +1,6 @@
 # libcd
 
-Support for C programs with queue processors, from Data And Signal's Piotr Gregor.
+Libcd implements queue and queue processing with multiple worker threads, from Data And Signal's Piotr Gregor.
 
 
 ## Quick setup
@@ -9,6 +9,7 @@ Support for C programs with queue processors, from Data And Signal's Piotr Grego
 git clone https://github.com/dataandsignal/libcd.git
 cd libcd
 make
+make install
 make examples
 make test
 ```
@@ -103,81 +104,6 @@ For more examples see /examples folder and /test folder.
 
 	For SYNC jobs, it is guaranteed that there will be a single call to user's dectructor (once the job is done or terminated).	
 
-## UDP endpoint
-
-UDP endpoint is implemented with libcd's work queue. It will open UDP port, create work queue, and start as many workers as configured, distributing work evenly.
-User callback gets called for each UDP packet.
-
-```
-#include "../include/cd.h"
-
-
-static void* on_udp_msg(void *msg)
-{
-    cd_msg_t *m = msg;
-
-    if (!m)
-	return NULL;
-
-    printf("Got %zu bytes to process\n", m->len);
-
-    // process m->data
-    return NULL;
-}
-
-static void sigint_handler(int signo)
-{
-    printf("Signal %d (%s) received\n", signo, strsignal(signo));
-
-    if (SIGINT == signo) {
-
-	printf("Do widzenia!\n");
-
-	cd_udp_endpoint_stop(udp);
-	cd_udp_endpoint_destroy(&udp);
-	exit(EXIT_SUCCESS);
-    } else {
-	printf ("Ignored\n");
-    }
-}
-
-int main(void)
-{
-    cd_udp_endpoint_t *udp = NULL;
-
-    /**
-     * By default all log from libcd goes into stderr, so you can redirect it wherever you want.
-     * If however all log output from lib should be redirected to some file then use this
-     *
-     * if (-1 == cd_util_openlog("/tmp/", "libcd"))
-     *     return -1;
-     *
-     * and all log will be there. You can also print to that file with CD_LOG_INFO/ERR/PERR/ALERT/WARN/CRIT:
-     *     CD_LOG_INFO("This goes wherever stdout/stderr output from libcd goes");
-     */
-
-    udp = cd_udp_endpoint_create();
-    if (!udp)
-	return -1;
-
-    cd_udp_endpoint_set_port(udp, 33226);
-    cd_udp_endpoint_set_workqueue_name(udp, "UDP workqueue");
-    cd_udp_endpoint_set_workqueue_threads_n(udp, 4);
-    cd_udp_endpoint_set_on_message_callback(udp, on_udp_msg);
-    cd_udp_endpoint_set_signal_handler(SIGINT, sigint_handler);
-
-    if (cd_udp_endpoint_init(udp) != 0) {
-	// Maybe could not bind or create a socket
-	cd_udp_endpoint_destroy(&udp);
-	return -1;
-    }
-
-    // This will block and process messages (send SIGINT to stop the endpoint and exit)
-    cd_udp_endpoint_loop(udp);
-
-    return 0;
-}
-```
 
 ## BUILD
 
