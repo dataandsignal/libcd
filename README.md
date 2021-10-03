@@ -136,7 +136,7 @@ make uninstall			-> remove library from /lib and headers from /usr/local/include
 
 ## Contribute
 
-Please submit any issues [here](https://github.com/dataandsignal/libcd/issues).
+In case of any issues, please submit them [here](https://github.com/dataandsignal/libcd/issues).
 
 All contributions are welcome, please submit PRs [here](https://github.com/dataandsignal/libcd/pulls).
 
